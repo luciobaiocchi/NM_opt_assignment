@@ -14,6 +14,11 @@ class NewtonMethods:
         
         grad_xk = gradf(xk)
         gradfk_norm = np.linalg.norm(grad_xk)
+        fx = f(xk)
+
+        history.append({'k': 0, 'x': xk.copy(), 'fx': fx, 'gnorm': gradfk_norm})
+
+
         
         print(f"START: Newton Modificato con Cholesky a BANDA. N={n}")
         
@@ -86,8 +91,8 @@ class NewtonMethods:
             fx = f(xk)
             
             k += 1
-            history.append((k, fx, gradfk_norm))
-            
+            #history.append((k, fx, gradfk_norm))
+            history.append({'k': k, 'x': xk.copy(), 'fx': fx, 'gnorm': gradfk_norm})
             if k % 10 == 0: # Stampiamo meno spesso per pulizia
                 print(f"Iter: {k} | f(x): {fx:.4e} | ||g||: {gradfk_norm:.4e}")
 
@@ -98,6 +103,13 @@ class NewtonMethods:
         xk = x0.copy()
         n = len(x0)
         history = []
+
+         # Salviamo lo stato iniziale
+        fx = f(xk)
+        gradk = gradf(xk)
+        grad_norm = npl.norm(gradk)
+        history.append({'k': 0, 'x': xk.copy(), 'fx': fx, 'gnorm': grad_norm})
+
 
         for k in range(kmax):
             gradk = gradf(xk)
@@ -153,6 +165,13 @@ class NewtonMethods:
             alpha_k = backtracking_line_search(f, gradf, xk, pk, alpha0, rho, c1, btmax)
 
             xk = xk + alpha_k * pk
-            history.append((k, f(xk), grad_norm))
 
-        return xk, f(xk), grad_norm, k, history
+             # Ricalcolo valori per il prossimo step e per la history
+            fx = f(xk)
+            gradk = gradf(xk)
+            grad_norm = npl.norm(gradk)
+            
+            history.append({'k': k+1, 'x': xk.copy(), 'fx': fx, 'gnorm': grad_norm})
+#            history.append((k, f(xk), grad_norm))
+
+        return xk, fx, grad_norm, k, history
