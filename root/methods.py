@@ -96,7 +96,7 @@ class NewtonMethods:
             if k % 10 == 0: # Stampiamo meno spesso per pulizia
                 print(f"Iter: {k} | f(x): {fx:.4e} | ||g||: {gradfk_norm:.4e}")
 
-        return xk, f(xk), gradfk_norm, k, history
+        return xk, fx, gradfk_norm, k, history
 
     @staticmethod
     def truncated_newton(x0, f, gradf, hessf, alpha0, kmax, tolgrad, c1, rho, btmax):

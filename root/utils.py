@@ -15,7 +15,7 @@ def backtracking_line_search(f, grad_f, x, p, alpha0=1.0, rho=0.5, c=1e-4, btmax
         # Condizione di Armijo
         if f(x + alpha * p) <= fx + c * alpha * grad_dot_p:
             satisfyed = True
-            print(k)
+            #print(k)
         else:
             k += 1
     
