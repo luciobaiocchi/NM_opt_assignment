@@ -73,7 +73,7 @@ class BandedTrigonometric:
 
 def run_test():
     # 1. Configurazione del Test
-    N = 1000     # Dimensione del problema (prova anche 1000)
+    N = 100000     # Dimensione del problema (prova anche 1000)
     h = 1e-5       # Passo per le differenze finite
     np.random.seed(42) # Per riproducibilità
     

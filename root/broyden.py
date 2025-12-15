@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.sparse import diags
+from scipy import sparse
 
 class BroydenProblem:
     @staticmethod
@@ -189,3 +190,49 @@ class BroydenProblem:
             [-2, -1, 0, 1, 2], 
             shape=(n, n)
         )
+    
+    @staticmethod
+    def get_jacobian_sparse(x):
+        n = len(x)
+        
+        # Diagonale principale
+        main_diag = 3 - 4 * x
+        
+        # Diagonali off-set (costanti)
+        lower_diag = -1 * np.ones(n - 1)
+        upper_diag = -2 * np.ones(n - 1)
+        
+        # Costruzione della matrice sparsa (formato dia o csr)
+        diagonals = [main_diag, lower_diag, upper_diag]
+        offsets = [0, -1, 1]
+        
+        J = sparse.diags(diagonals, offsets, shape=(n, n), format='csr')
+        return J
+    
+    @staticmethod
+    def get_residual_vector(x):
+        """Restituisce il vettore f(x) invece della norma scalare."""
+        x = np.asarray(x)
+        x_pad = np.pad(x, (1, 1), mode='constant', constant_values=0)
+        
+        x_k = x_pad[1:-1]
+        x_prev = x_pad[0:-2]
+        x_next = x_pad[2:]
+        
+        # Calcolo vettorizzato del sistema di equazioni
+        f_vec = (3 - 2 * x_k) * x_k - x_prev - 2 * x_next + 1
+        return f_vec
+
+    @staticmethod
+    def exact_gradient(x):
+        """
+        Calcola il gradiente esatto analitico di F(x).
+        Grad F(x) = J^T * f(x)
+        """
+        f_vec = BroydenProblem.get_residual_vector(x)
+        J = BroydenProblem.get_jacobian_sparse(x)
+        
+        # Moltiplicazione matrice trasposta per vettore
+        # J è in formato CSR o DIA, la trasposta è efficiente
+        grad = J.T @ f_vec
+        return grad
