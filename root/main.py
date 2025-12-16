@@ -6,7 +6,7 @@ from methods import NewtonMethods
 from utils import analyze_convergence, plot_convergence
 
 # --- CONFIGURAZIONE ---
-N = 100000  # 100 Milioni: attenzione alla RAM!
+N = 4  # 100 Milioni: attenzione alla RAM!
 K_MAX = 200
 TOL = 1e-8
 SEED = 358616

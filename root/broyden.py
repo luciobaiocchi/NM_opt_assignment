@@ -41,7 +41,7 @@ class BroydenProblem:
         return F_x
 
     @staticmethod
-    def gradient(x, h=1e-5):
+    def gradient(x, h=1e-5, is_h_dynamic=True):
         n = len(x)
         xp = np.pad(x, (2, 2), mode='constant', constant_values=0)
         
@@ -67,7 +67,12 @@ class BroydenProblem:
             t_ip1[-1] = 0.0 # Bordo destro f_n
             
             return 0.5 * (t_im1**2 + t_i**2 + t_ip1**2)
-
+        if is_h_dynamic:
+            h = h * np.abs(x)
+        #print(f"XXXXXXXXXXXXXXXXXXXX{x}")
+        #print(f"ABSSOEJFONEFJNFJEJFN{np.abs(x)}")
+        #print(f"JHSHHSHSHSHSHSHSHSHS{h * np.abs(x)}")
+        #print(f"HHHHhhhhhhHHHhHHHHHH{h}")
         E_plus  = calc_local_energy_change(h)
         E_minus = calc_local_energy_change(-h)
         

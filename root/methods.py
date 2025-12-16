@@ -103,7 +103,6 @@ class NewtonMethods:
         xk = x0.copy()
         n = len(x0)
         history = []
-
          # Salviamo lo stato iniziale
         fx = f(xk)
         gradk = gradf(xk)
