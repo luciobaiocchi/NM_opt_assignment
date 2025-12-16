@@ -6,16 +6,20 @@ from methods import NewtonMethods
 from utils import analyze_convergence, plot_convergence
 
 # --- CONFIGURAZIONE ---
-N = 100000  # 10 Milioni: attenzione alla RAM!
+N = 100000  # 100 Milioni: attenzione alla RAM!
 K_MAX = 200
 TOL = 1e-8
-X0_SEED = 358616
+SEED = 358616
 
 # Setup Iniziale
-np.random.seed(X0_SEED)
+
+np.random.seed(SEED)
+#x0_bro = np.full(N,-1)
 x0_bro = np.random.uniform(-2, 0, N)
-#x0_trig = np.random.uniform(0, 2, N)
+x0_bro = np.full(N,-1)
 x0_trig = np.ones(N)
+hypercube_bro = np.random.uniform(-2, 0, (5, N))
+hypercube_tri = np.random.uniform(0, 2, (5, N))
 
 print(f"Problem Size: {N}")
 print(f"Initial Cost: {BroydenProblem.func(x0_bro):.4e}")
@@ -71,7 +75,7 @@ xk_mn, fxk_mn, gradxk_norm_mn, k_mn, hist_mn = NewtonMethods.modified_newton_ban
     alpha0=1.0,
     kmax=K_MAX,
     tolgrad=TOL,
-    c1=1e-4, 
+    c1=1e-5, 
     rho=0.5, 
     btmax=50
 )
