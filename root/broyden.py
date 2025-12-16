@@ -236,3 +236,74 @@ class BroydenProblem:
         # J è in formato CSR o DIA, la trasposta è efficiente
         grad = J.T @ f_vec
         return grad
+    
+    @staticmethod
+    def hessian_with_jacobian(x, h_arg=1e-5):
+        """
+        Calcola l'Hessiana approssimata FD supportando h scalare o vettoriale.
+        h_arg: può essere float (es. 1e-4) o array numpy di dimensione n (h_i per ogni x_i).
+        """
+        n = len(x)
+        
+        # Gestione h scalare vs vettoriale
+        if np.isscalar(h_arg):
+            h_vec = np.full(n, h_arg)
+        else:
+            h_vec = np.asarray(h_arg)
+            # Safety check: se h_i è 0 (perché x_i=0), imposta un minimo per evitare divisioni per zero
+            h_vec[h_vec == 0] = 1e-16
+
+        diff_vectors = []
+        
+        # Loop Coloring (Stride 5)
+        for s in range(5):
+            # Crea maschera per gli indici perturbati in questo gruppo
+            mask = np.zeros(n)
+            mask[s::5] = 1.0
+            
+            # Calcola il vettore di perturbazione specifico: 
+            # dove mask è 1, usiamo il valore corrispondente di h_vec
+            p = mask * h_vec 
+            
+            # Differenza finita centrata
+            # Calcoliamo solo la differenza grezza qui (numerator)
+            g_plus = BroydenProblem.exact_gradient(x + p)
+            g_minus = BroydenProblem.exact_gradient(x - p)
+            
+            diff = (g_plus - g_minus) 
+            diff_vectors.append(diff)
+            
+        # --- RICOSTRUZIONE E NORMALIZZAZIONE ---
+        idx_n = np.arange(n)
+        
+        # 1. Diagonale Principale (offset 0): H[i, i]
+        # Derivata rispetto a x_i -> Dividiamo per 2*h_i
+        raw_d0 = np.choose(idx_n % 5, diff_vectors)
+        d0 = raw_d0 / (2 * h_vec)
+        
+        # 2. Diagonale Superiore 1 (offset +1): H[i, i+1]
+        # Derivata rispetto a x_{i+1} -> Dividiamo per 2*h_{i+1}
+        raw_d1 = np.choose((idx_n[:-1] + 1) % 5, [v[:-1] for v in diff_vectors])
+        d1 = raw_d1 / (2 * h_vec[1:]) # Nota lo slicing su h_vec
+        
+        # 3. Diagonale Inferiore 1 (offset -1): H[i, i-1]
+        # Derivata rispetto a x_{i-1} -> Dividiamo per 2*h_{i-1}
+        raw_dm1 = np.choose((idx_n[1:] - 1) % 5, [v[1:] for v in diff_vectors])
+        dm1 = raw_dm1 / (2 * h_vec[:-1])
+        
+        # 4. Diagonale Superiore 2 (offset +2): H[i, i+2]
+        # Derivata rispetto a x_{i+2}
+        raw_d2 = np.choose((idx_n[:-2] + 2) % 5, [v[:-2] for v in diff_vectors])
+        d2 = raw_d2 / (2 * h_vec[2:])
+        
+        # 5. Diagonale Inferiore 2 (offset -2): H[i, i-2]
+        # Derivata rispetto a x_{i-2}
+        raw_dm2 = np.choose((idx_n[2:] - 2) % 5, [v[2:] for v in diff_vectors])
+        dm2 = raw_dm2 / (2 * h_vec[:-2])
+        
+        return diags(
+            [dm2, dm1, d0, d1, d2], 
+            [-2, -1, 0, 1, 2], 
+            shape=(n, n), 
+            format='csr'
+        )

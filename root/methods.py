@@ -121,7 +121,7 @@ class NewtonMethods:
             B= hessf(xk)
 
             eta_k = min(0.5, np.sqrt(grad_norm))
-
+            
             z = np.zeros(n)          # Soluzione parziale (inizialmente 0)
             r = -gradk - B @ z    # Residuo iniziale (-g perché z=0)
             d = r.copy()             # Direzione di ricerca iniziale
