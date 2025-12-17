@@ -244,7 +244,7 @@ class BroydenProblem:
         return grad
     
     @staticmethod
-    def hessian_with_jacobian(x, h_arg=1e-5):
+    def hessian_with_jacobian(x, h_arg=1e-5, ):
         """
         Calcola l'Hessiana approssimata FD supportando h scalare o vettoriale.
         h_arg: può essere float (es. 1e-4) o array numpy di dimensione n (h_i per ogni x_i).

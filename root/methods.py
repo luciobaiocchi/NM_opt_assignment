@@ -6,13 +6,37 @@ from utils import backtracking_line_search
 class NewtonMethods:
     
     @staticmethod
-    def modified_newton_banded(x0, f, gradf, hessf, alpha0=1.0, kmax=100, tolgrad=1e-5, c1=1e-4, rho=0.5, btmax=20):
+    def modified_newton_banded(x0, f, gradf, hessf, alpha0=1.0, kmax=100, tolgrad=1e-5, c1=1e-4, rho=0.5, btmax=20, dynamic=False, h=1e-5):
+        '''
+            Solves an unconstrained optimization problem using the Modified Newton method, 
+            exploiting the banded structure of the Hessian matrix.
+
+            This implementation assumes the Hessian has a specific sparsity pattern 
+            (lower bandwidth = 2) and utilizes `scipy.linalg.cholesky_banded` for efficient 
+            linear system solving. If the Hessian is not positive definite, a multiple 
+            of the identity matrix is added (Cholesky with added diagonal correction).
+
+            :param x0: The starting point for the optimization algorithm (numpy array of shape (n,)).
+            :param f: The objective function to minimize. Callable, returns a scalar.
+            :param gradf: The gradient of the objective function. Callable, returns a numpy array of shape (n,).
+            :param hessf: The Hessian of the objective function. Callable, returns a scipy.sparse matrix. 
+                        Note: The code logic assumes a pentadiagonal structure (lower bandwidth of 2).
+            :param alpha0: The initial step size for the backtracking line search.
+            :param kmax: The maximum number of iterations allowed for the Newton method.
+            :param tolgrad: The tolerance for the stopping criterion based on the gradient norm 
+                            (stops if ||grad f|| < tolgrad).
+            :param c1: The parameter for the Armijo (sufficient decrease) condition (typically in (0, 1)).
+            :param rho: The reduction factor for the step size during backtracking (typically in (0, 1)).
+            :param btmax: The maximum number of backtracking steps allowed per iteration.
+            
+            :return: A tuple containing the final iterate, the sequence of iterates, and the number of iterations.
+        '''
         xk = x0.copy()
         n = len(x0)
         k = 0
         history = []
         
-        grad_xk = gradf(xk)
+        grad_xk = gradf(xk, h, is_h_dynamic=dynamic)
         gradfk_norm = np.linalg.norm(grad_xk)
         fx = f(xk)
 
@@ -20,10 +44,9 @@ class NewtonMethods:
 
 
         
-        print(f"START: Newton Modificato con Cholesky a BANDA. N={n}")
+        print(f"--------- START: Newton Modificato con Cholesky a BANDA. N={n} ---------")
         
         while k < kmax and gradfk_norm > tolgrad:
-            # 1. Calcolo Hessiana Sparsa
             H_sparse = hessf(xk)
             
             # 2. Conversione in formato "Banded" per scipy.linalg (Lower form)
@@ -86,7 +109,7 @@ class NewtonMethods:
             xk = xk + alpha_k * pk
             
             # Aggiornamento gradienti
-            grad_xk = gradf(xk)
+            grad_xk = gradf(xk, h, is_h_dynamic=dynamic)
             gradfk_norm = np.linalg.norm(grad_xk)
             fx = f(xk)
             
@@ -94,6 +117,83 @@ class NewtonMethods:
             #history.append((k, fx, gradfk_norm))
             history.append({'k': k, 'x': xk.copy(), 'fx': fx, 'gnorm': gradfk_norm})
             if k % 10 == 0: # Stampiamo meno spesso per pulizia
+                print(f"Iter: {k} | f(x): {fx:.4e} | ||g||: {gradfk_norm:.4e}")
+
+        return xk, fx, gradfk_norm, k, history
+    
+    @staticmethod
+    def modified_newton_single_diag(x0, f, gradf, hessf, alpha0=1.0, kmax=100, tolgrad=1e-5, c1=1e-4, rho=0.5, btmax=20, dynamic=False, h=1e-5):
+        '''
+        Solves an unconstrained optimization problem assuming a DIAGONAL Hessian structure.
+        Specific for the "Banded Trigonometric" problem where the Hessian reduces to a vector.
+
+        Since the Hessian is diagonal, the linear system H*p = -g becomes a simple
+        element-wise division: p_i = -g_i / H_ii.
+        
+        The "Modified" part handles non-positive definite elements by adding a scalar tau
+        calculated directly from the minimum diagonal element.
+        '''
+        xk = x0.copy()
+        n = len(x0)
+        k = 0
+        history = []
+        
+        # Calcolo iniziale
+        grad_xk = gradf(xk, h, dynamic)
+        gradfk_norm = np.linalg.norm(grad_xk)
+        fx = f(xk)
+
+        history.append({'k': 0, 'x': xk.copy(), 'fx': fx, 'gnorm': gradfk_norm})
+        
+        print(f"--------- START: Newton Modificato DIAGONALE (Trigonometric). N={n} ---------")
+        
+        while k < kmax and gradfk_norm > tolgrad:
+            # 1. Calcolo Hessiana Sparsa
+            # Per il problema trigonometrico, hessf ritorna una matrice sparse.
+            # Estraiamo subito la diagonale come array numpy 1D.
+            H_sparse = hessf(xk, h, dynamic)
+            diag_H = H_sparse.diagonal() 
+            
+            # --- NEWTON MODIFICATO (Diagonal Correction) ---
+            # Poiché è diagonale, gli autovalori SONO gli elementi della diagonale.
+            # Non serve tentare Cholesky in un loop. Calcoliamo tau direttamente.
+            
+            min_diag_val = np.min(diag_H)
+            tau = 0.0
+            beta = 1e-3
+            
+            # Se l'elemento minimo è negativo o zero, la matrice non è definita positiva.
+            # Dobbiamo aggiungere tau tale che: min_val + tau > 0
+            if min_diag_val <= 0:
+                tau = -min_diag_val + beta
+                # print(f"  > Hessian indefinite (min={min_diag_val:.4e}). Correcting with tau={tau:.4e}")
+            
+            # 2. Risoluzione del sistema (H + tau*I) * p = -g
+            # Essendo diagonale, p[i] = -g[i] / (H[i,i] + tau)
+            # Questa operazione è O(N), molto più veloce di qualsiasi solver lineare.
+            denominator = diag_H + tau
+            
+            # Safety check per divisione per zero (estremamente raro grazie a beta, ma utile)
+            if np.any(np.abs(denominator) < 1e-14):
+                 pk = -grad_xk # Fallback al gradiente
+            else:
+                 pk = -grad_xk / denominator
+
+            # 3. Backtracking Line Search
+            alpha_k = backtracking_line_search(f, gradf, xk, pk, alpha0, rho, c1, btmax)
+            
+            # Aggiornamento x
+            xk = xk + alpha_k * pk
+            
+            # Aggiornamento gradienti e funzione per la prossima iterazione
+            grad_xk = gradf(xk, h, dynamic)
+            gradfk_norm = np.linalg.norm(grad_xk)
+            fx = f(xk)
+            
+            k += 1
+            history.append({'k': k, 'x': xk.copy(), 'fx': fx, 'gnorm': gradfk_norm})
+            
+            if k % 10 == 0:
                 print(f"Iter: {k} | f(x): {fx:.4e} | ||g||: {gradfk_norm:.4e}")
 
         return xk, fx, gradfk_norm, k, history
@@ -109,6 +209,7 @@ class NewtonMethods:
         grad_norm = npl.norm(gradk)
         history.append({'k': 0, 'x': xk.copy(), 'fx': fx, 'gnorm': grad_norm})
 
+        print(f"--------- START: Newton Truncated. N={n} ---------")
 
         for k in range(kmax):
             gradk = gradf(xk, h, is_h_dynamic=dynamic)
@@ -171,6 +272,6 @@ class NewtonMethods:
             grad_norm = npl.norm(gradk)
             
             history.append({'k': k+1, 'x': xk.copy(), 'fx': fx, 'gnorm': grad_norm})
-#            history.append((k, f(xk), grad_norm))
+#             history.append((k, f(xk), grad_norm))
 
         return xk, fx, grad_norm, k, history

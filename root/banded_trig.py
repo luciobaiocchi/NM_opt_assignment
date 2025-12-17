@@ -39,7 +39,7 @@ class BandedTrigonometric:
         return F_x
     
     @staticmethod
-    def gradient(x, h=1e-5):
+    def gradient(x, h=1e-5, is_h_dynamic=False):
         """
         Calcola il gradiente usando Differenze Finite Centrate 
         sulla versione SEMPLIFICATA algebricamente della funzione.
@@ -76,6 +76,8 @@ class BandedTrigonometric:
 
         # Calcolo Vettorizzato
         # Calcoliamo i termini perturbati (x+h) e (x-h) per tutto il vettore insieme
+        if is_h_dynamic:
+            h = h * np.abs(x)
         terms_plus = get_local_contributions(x + h)
         terms_minus = get_local_contributions(x - h)
         
@@ -86,7 +88,7 @@ class BandedTrigonometric:
         return grad
     
     @staticmethod
-    def hessian(x, h=1e-5):
+    def hessian(x, h=1e-5, is_h_dynamic=False):
         x = np.asarray(x)
         n = len(x)
         ids = np.arange(1, n + 1)
@@ -107,8 +109,10 @@ class BandedTrigonometric:
         val_plus = get_local_val(x + h)
         val_minus = get_local_val(x - h)
         
+        if is_h_dynamic:
+            h = h * np.abs(x)
+        
         # 2. Formula Differenze Finite per derivata seconda
-        # (f(x+h) - 2f(x) + f(x-h)) / h^2
         h_diag = (val_plus - 2 * val_curr + val_minus) / (h ** 2)
         
         return diags(h_diag) #, 0, shape= (n,n))
