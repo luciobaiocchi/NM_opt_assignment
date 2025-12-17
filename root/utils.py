@@ -159,6 +159,4 @@ def analyze_convergence1(history, tail=5):
     if len(rates) == 0:
         return None
 
-    # Media solo in regime asintotico
-    tail = min(tail, len(rates))
-    return float(np.mean(rates[-tail:]))
+    return float(np.mean(rates))

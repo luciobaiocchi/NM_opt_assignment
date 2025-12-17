@@ -38,7 +38,7 @@ fieldnames = [
     "convergence_rate",
     "time"
 ]
-'''
+
 print("\n" + "="*100)
 print("START"*20)
 print("="*100 + "\n")
@@ -310,7 +310,7 @@ with open(csv_filename4, mode="w", newline="") as f:
 
 print(f"\nCSV salvato correttamente come: {csv_filename4}")
 
-'''
+
 fieldnames2 = [
     "Point ID",
     "n",
