@@ -218,7 +218,7 @@ class NewtonMethods:
                 print(f"Convergenza raggiunta all'iterazione {k}")
                 return xk, f(xk), grad_norm, k, history
             
-            B= hessf(xk)
+            B= hessf(xk, h, is_h_dynamic=dynamic)
 
             eta_k = min(0.5, np.sqrt(grad_norm))
             

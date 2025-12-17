@@ -80,8 +80,8 @@ def analyze_convergence(history):
     errors = errors[errors > 1e-16] 
     
     rates = []
-    print(f"\n{'Iter k':<10} | {'Grad Norm':<15} | {'Stima Ordine p':<15}")
-    print("-" * 45)
+    #print(f"\n{'Iter k':<10} | {'Grad Norm':<15} | {'Stima Ordine p':<15}")
+    #print("-" * 45)
     
     for k in range(1, len(errors) - 1):
         e_k = errors[k]
@@ -101,6 +101,6 @@ def analyze_convergence(history):
             p_k = 0.0
             
         rates.append(p_k)
-        print(f"{k:<10} | {e_k:<15.2e} | {p_k:<15.4f}")
+        #print(f"{k:<10} | {e_k:<15.2e} | {p_k:<15.4f}")
         
-    return errors, rates
+    return np.mean(rates)
