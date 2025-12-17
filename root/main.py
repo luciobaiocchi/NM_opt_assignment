@@ -1,5 +1,5 @@
 import numpy as np
-import time  # <--- Import necessario
+import time
 from broyden import BroydenProblem
 from banded_trig import BandedTrigonometric
 from methods import NewtonMethods

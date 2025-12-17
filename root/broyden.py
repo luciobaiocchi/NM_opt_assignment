@@ -69,10 +69,11 @@ class BroydenProblem:
             return 0.5 * (t_im1**2 + t_i**2 + t_ip1**2)
         if is_h_dynamic:
             h = h * np.abs(x)
+            #print("broyden, gradient with dynamic h")
+        #print(f"HHHHhhhhhhHHHhHHHHHH{h}")
         #print(f"XXXXXXXXXXXXXXXXXXXX{x}")
         #print(f"ABSSOEJFONEFJNFJEJFN{np.abs(x)}")
         #print(f"JHSHHSHSHSHSHSHSHSHS{h * np.abs(x)}")
-        #print(f"HHHHhhhhhhHHHhHHHHHH{h}")
         E_plus  = calc_local_energy_change(h)
         E_minus = calc_local_energy_change(-h)
         

@@ -99,19 +99,19 @@ class NewtonMethods:
         return xk, fx, gradfk_norm, k, history
 
     @staticmethod
-    def truncated_newton(x0, f, gradf, hessf, alpha0, kmax, tolgrad, c1, rho, btmax):
+    def truncated_newton(x0, f, gradf, hessf, alpha0, kmax, tolgrad, c1, rho, btmax, dynamic=False, h=1e-5):
         xk = x0.copy()
         n = len(x0)
         history = []
          # Salviamo lo stato iniziale
         fx = f(xk)
-        gradk = gradf(xk)
+        gradk = gradf(xk, h, is_h_dynamic=dynamic)
         grad_norm = npl.norm(gradk)
         history.append({'k': 0, 'x': xk.copy(), 'fx': fx, 'gnorm': grad_norm})
 
 
         for k in range(kmax):
-            gradk = gradf(xk)
+            gradk = gradf(xk, h, is_h_dynamic=dynamic)
             grad_norm = npl.norm(gradk)
             if grad_norm < tolgrad:
                 print(f"Convergenza raggiunta all'iterazione {k}")
@@ -161,13 +161,13 @@ class NewtonMethods:
             if pk is None: # Se il loop finisce per max_iter
                 pk = z
 
-            alpha_k = backtracking_line_search(f, gradf, xk, pk, alpha0, rho, c1, btmax)
+            alpha_k = backtracking_line_search(f, gradf, xk, pk, alpha0, rho, c1, btmax, dynamic, h)
 
             xk = xk + alpha_k * pk
 
              # Ricalcolo valori per il prossimo step e per la history
             fx = f(xk)
-            gradk = gradf(xk)
+            gradk = gradf(xk, h, is_h_dynamic=dynamic)
             grad_norm = npl.norm(gradk)
             
             history.append({'k': k+1, 'x': xk.copy(), 'fx': fx, 'gnorm': grad_norm})

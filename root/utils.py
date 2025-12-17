@@ -1,11 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-def backtracking_line_search(f, grad_f, x, p, alpha0=1.0, rho=0.5, c=1e-4, btmax=20):
+def backtracking_line_search(f, grad_f, x, p, alpha0=1.0, rho=0.5, c=1e-4, btmax=20, dynamic=False, h=1e-5):
     k = 0
     satisfyed = False
     fx = f(x)
-    grad_fx = grad_f(x)
+    grad_fx = grad_f(x, h, is_h_dynamic=dynamic)
     
     # Pre-calcoliamo il termine lineare per efficienza
     grad_dot_p = np.dot(grad_fx, p)
