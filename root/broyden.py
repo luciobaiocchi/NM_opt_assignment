@@ -67,8 +67,11 @@ class BroydenProblem:
             t_ip1[-1] = 0.0 # Bordo destro f_n
             
             return 0.5 * (t_im1**2 + t_i**2 + t_ip1**2)
+        
         if is_h_dynamic:
             h = h * np.abs(x)
+            h = np.where(h == 0, 1e-10, h)
+
             #print("broyden, gradient with dynamic h")
         #print(f"HHHHhhhhhhHHHhHHHHHH{h}")
         #print(f"XXXXXXXXXXXXXXXXXXXX{x}")
@@ -80,123 +83,131 @@ class BroydenProblem:
         return (E_plus - E_minus) / (2 * h)
 
     @staticmethod
-    def hessian_sparse(x, h=1e-5):
+
+    def hessian_sparse(x, h=1e-5, is_h_dynamic=True):
         n = len(x)
-        
-        # Pad x per gestire i vicini senza if/else
+
         xp = np.pad(x, (2, 2), mode='constant', constant_values=0)
-        
-        # Helper: calcola il termine grezzo
+
         def get_term_val(val_k, val_km1, val_kp1):
             return ((3 - 2 * val_k) * val_k - val_km1 - 2 * val_kp1 + 1)
 
-        # ==========================================
-        # 1. DIAGONALE PRINCIPALE (i, i)
-        # ==========================================
+        # --- h scalare o vettoriale (dynamic) ---
+        if is_h_dynamic:
+            h_vec = h * np.abs(x)
+            h_vec = np.where(h_vec == 0, 1e-12, h_vec)
+        else:
+            h_vec = np.full(n, h)
+
+        # =====================================================================================
+        # 1) DIAGONALE PRINCIPALE (i,i)  -> usa h_i
+        # =====================================================================================
         idx = np.arange(n)
-        k = idx + 2 # Mappa indici su xp
-        
-        # Carichiamo i valori dai vicini
+        k = idx + 2
+
         v_k   = xp[k]
         v_km1 = xp[k-1]; v_km2 = xp[k-2]
         v_kp1 = xp[k+1]; v_kp2 = xp[k+2]
-        
-        # Funzione locale per calcolare l'energia di un punto i
-        def calc_E_local(shift_val):
-            # Termine i-1 (indice k-1):
-            # ATTENZIONE: Per i=0, questo è il termine -1. Deve essere 0.
-            t_im1 = get_term_val(v_km1, v_km2, v_k + shift_val)
-            t_im1[0] = 0.0 # FIX: Maschera bordo sinistro
 
-            # Termine i (indice k):
-            t_i   = get_term_val(v_k + shift_val, v_km1, v_kp1)
-            
-            # Termine i+1 (indice k+1):
-            # ATTENZIONE: Per i=n-1, questo è il termine n. Deve essere 0.
+        def calc_E_local(shift_val):
+            t_im1 = get_term_val(v_km1, v_km2, v_k + shift_val)
+            t_im1[0] = 0.0
+
+            t_i = get_term_val(v_k + shift_val, v_km1, v_kp1)
+
             t_ip1 = get_term_val(v_kp1, v_k + shift_val, v_kp2)
-            t_ip1[-1] = 0.0 # FIX: Maschera bordo destro
-            
+            t_ip1[-1] = 0.0
+
             return 0.5 * (t_im1**2 + t_i**2 + t_ip1**2)
 
-        E_plus   = calc_E_local(h)
-        E_minus  = calc_E_local(-h)
-        E_center = calc_E_local(0)
-        
-        main_diag = (E_plus - 2*E_center + E_minus) / (h**2)
+        h0 = h_vec
+        E_plus   = calc_E_local(h0)
+        E_minus  = calc_E_local(-h0)
+        E_center = calc_E_local(0.0)
 
-        # ==========================================
-        # 2. OFF-DIAGONAL 1 (i, i+1)
-        # ==========================================
+        main_diag = (E_plus - 2 * E_center + E_minus) / (h0**2)
+
+        # =====================================================================================
+        # 2) OFF-DIAGONAL 1 (i,i+1)  -> usa h_i e h_{i+1} (formula generale)
+        # =====================================================================================
         idx1 = np.arange(n - 1)
         k = idx1 + 2
-        
-        v_k = xp[k]; v_km1 = xp[k-1]; v_km2 = xp[k-2]
+
+        v_k   = xp[k]
+        v_km1 = xp[k-1]; v_km2 = xp[k-2]
         v_kp1 = xp[k+1]; v_kp2 = xp[k+2]; v_kp3 = xp[k+3]
-        
+
         def calc_E_pair1(p1, p2):
-            val_k_mod = v_k + p1
+            val_k_mod   = v_k + p1
             val_kp1_mod = v_kp1 + p2
-            
-            # Termine i-1 (idx -1 se i=0) -> FIX: Mask [0]
-            t1 = get_term_val(v_km1, v_km2, val_k_mod)
-            t1[0] = 0.0 
-            
-            # Termine i
-            t2 = get_term_val(val_k_mod, v_km1, val_kp1_mod)
-            
-            # Termine i+1
-            t3 = get_term_val(val_kp1_mod, val_k_mod, v_kp2)
-            
-            # Termine i+2 (idx n se i=n-2) -> FIX: Mask [-1]
-            t4 = get_term_val(v_kp2, val_kp1_mod, v_kp3)
-            t4[-1] = 0.0
-            
-            return 0.5 * (t1**2 + t2**2 + t3**2 + t4**2)
 
-        val = (calc_E_pair1(h, h) - calc_E_pair1(h, -h) - calc_E_pair1(-h, h) + calc_E_pair1(-h, -h)) / (4 * h**2)
-        upper_diag1 = val
-
-        # ==========================================
-        # 3. OFF-DIAGONAL 2 (i, i+2)
-        # ==========================================
-        idx2 = np.arange(n - 2)
-        k = idx2 + 2
-        
-        v_k = xp[k]; v_km1 = xp[k-1]; v_km2 = xp[k-2]
-        v_kp1 = xp[k+1]; v_kp2 = xp[k+2]; v_kp3 = xp[k+3]; v_kp4 = xp[k+4]
-
-        def calc_E_pair2(p1, p2):
-            val_k_mod = v_k + p1
-            val_kp2_mod = v_kp2 + p2
-            
-            # Termine i-1 (idx -1 se i=0) -> FIX: Mask [0]
             t1 = get_term_val(v_km1, v_km2, val_k_mod)
             t1[0] = 0.0
-            
-            # Termine i
-            t2 = get_term_val(val_k_mod, v_km1, v_kp1)
-            
-            # Termine i+1
-            t3 = get_term_val(v_kp1, val_k_mod, val_kp2_mod)
-            
-            # Termine i+2
-            t4 = get_term_val(val_kp2_mod, v_kp1, v_kp3)
-            
-            # Termine i+3 (idx n se i=n-3) -> FIX: Mask [-1]
-            t5 = get_term_val(v_kp3, val_kp2_mod, v_kp4)
-            t5[-1] = 0.0
-            
-            return 0.5 * (t1**2 + t2**2 + t3**2 + t4**2 + t5**2)
 
-        val = (calc_E_pair2(h, h) - calc_E_pair2(h, -h) - calc_E_pair2(-h, h) + calc_E_pair2(-h, -h)) / (4 * h**2)
-        upper_diag2 = val
+            t2 = get_term_val(val_k_mod, v_km1, val_kp1_mod)
+            t3 = get_term_val(val_kp1_mod, val_k_mod, v_kp2)
+
+            t4 = get_term_val(v_kp2, val_kp1_mod, v_kp3)
+            t4[-1] = 0.0
+
+            return 0.5 * (t1**2 + t2**2 + t3**2 + t4**2)
+
+        h_i  = h_vec[:-1]
+        h_ip = h_vec[1:]
+
+        upper_diag1 = (
+            calc_E_pair1( h_i,  h_ip)
+            - calc_E_pair1( h_i, -h_ip)
+            - calc_E_pair1(-h_i,  h_ip)
+            + calc_E_pair1(-h_i, -h_ip)
+        ) / (4 * h_i * h_ip)
+
+        # =====================================================================================
+        # 3) OFF-DIAGONAL 2 (i,i+2)  -> esiste solo se n >= 3
+        # =====================================================================================
+        if n >= 3:
+            idx2 = np.arange(n - 2)
+            k = idx2 + 2
+
+            v_k   = xp[k]
+            v_km1 = xp[k-1]; v_km2 = xp[k-2]
+            v_kp1 = xp[k+1]; v_kp2 = xp[k+2]; v_kp3 = xp[k+3]; v_kp4 = xp[k+4]
+
+            def calc_E_pair2(p1, p2):
+                val_k_mod   = v_k + p1
+                val_kp2_mod = v_kp2 + p2
+
+                t1 = get_term_val(v_km1, v_km2, val_k_mod)
+                t1[0] = 0.0
+
+                t2 = get_term_val(val_k_mod, v_km1, v_kp1)
+                t3 = get_term_val(v_kp1, val_k_mod, val_kp2_mod)
+                t4 = get_term_val(val_kp2_mod, v_kp1, v_kp3)
+
+                t5 = get_term_val(v_kp3, val_kp2_mod, v_kp4)
+                t5[-1] = 0.0
+
+                return 0.5 * (t1**2 + t2**2 + t3**2 + t4**2 + t5**2)
+
+            h_i  = h_vec[:-2]
+            h_i2 = h_vec[2:]
+
+            upper_diag2 = (
+                calc_E_pair2( h_i,  h_i2)
+                - calc_E_pair2( h_i, -h_i2)
+                - calc_E_pair2(-h_i,  h_i2)
+                + calc_E_pair2(-h_i, -h_i2)
+            ) / (4 * h_i * h_i2)
+        else:
+            upper_diag2 = np.array([])
+
 
         return diags(
-            [upper_diag2, upper_diag1, main_diag, upper_diag1, upper_diag2], 
-            [-2, -1, 0, 1, 2], 
+            [upper_diag2, upper_diag1, main_diag, upper_diag1, upper_diag2],
+            [-2, -1, 0, 1, 2],
             shape=(n, n)
         )
-    
+
     @staticmethod
     def get_jacobian_sparse(x):
         n = len(x)
@@ -314,3 +325,27 @@ class BroydenProblem:
             shape=(n, n), 
             format='csr'
         )
+    
+    @staticmethod
+    def exact_hessian(x, h=None, is_h_dynamic=None):
+        """
+        Hessiana esatta di F(x) = 0.5 * ||f(x)||^2:
+            ∇²F(x) = J(x)^T J(x) + Σ_i f_i(x) ∇² f_i(x)
+
+        Per Broyden tridiagonal:
+            ∇² f_i(x) = -4 e_i e_i^T
+        quindi:
+            Σ_i f_i(x) ∇² f_i(x) = diag(-4 f(x))
+        """
+        x = np.asarray(x)
+
+        f_vec = BroydenProblem.get_residual_vector(x)          # shape (n,)
+        J = BroydenProblem.get_jacobian_sparse(x)              # sparse (n,n)
+
+        # Primo termine: J^T J (sparso)
+        JTJ = (J.T @ J).tocsr()
+
+        # Secondo termine: diag(-4 * f_vec)
+        D = diags(-4.0 * f_vec, 0, shape=(len(x), len(x)), format='csr')
+
+        return (JTJ + D).tocsr()

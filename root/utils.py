@@ -104,3 +104,61 @@ def analyze_convergence(history):
         #print(f"{k:<10} | {e_k:<15.2e} | {p_k:<15.4f}")
         
     return np.mean(rates)
+
+import numpy as np
+
+def analyze_convergence1(history, tail=5):
+    """
+    Stima l'ordine di convergenza usando
+    ||x^{k} - x^{k-1}|| come nel pdf (eq. 42).
+
+    Parameters
+    ----------
+    history : list
+        Lista di dizionari o tuple contenenti gli iterati.
+    tail : int
+        Numero di valori finali su cui mediare (regime asintotico).
+
+    Returns
+    -------
+    float or None
+        Stima media dell'ordine di convergenza.
+    """
+
+    # --- Estrazione iterati x_k ---
+    try:
+        xs = [h["x"] for h in history]
+    except (TypeError, KeyError):
+        xs = [h[0] for h in history]
+
+    if len(xs) < 3:
+        return None
+
+    # --- Errori stimati: ||x_k - x_{k-1}||
+    errors = np.array([
+        np.linalg.norm(xs[k] - xs[k-1])
+        for k in range(1, len(xs))
+    ])
+
+    # Evita log(0) senza alterare la lunghezza
+    errors = np.maximum(errors, 1e-16)
+
+    rates = []
+    for k in range(1, len(errors) - 1):
+        e_km1 = errors[k-1]
+        e_k   = errors[k]
+        e_kp1 = errors[k+1]
+
+        denom = np.log(e_k / e_km1)
+        if abs(denom) < 1e-12:
+            continue
+
+        p_k = np.log(e_kp1 / e_k) / denom
+        rates.append(p_k)
+
+    if len(rates) == 0:
+        return None
+
+    # Media solo in regime asintotico
+    tail = min(tail, len(rates))
+    return float(np.mean(rates[-tail:]))
