@@ -230,7 +230,7 @@ class BroydenProblem:
         return f_vec
 
     @staticmethod
-    def exact_gradient(x):
+    def exact_gradient(x, h=None, is_h_dynamic=None):
         """
         Calcola il gradiente esatto analitico di F(x).
         Grad F(x) = J^T * f(x)
@@ -244,7 +244,7 @@ class BroydenProblem:
         return grad
     
     @staticmethod
-    def hessian_with_jacobian(x, h_arg=1e-5):
+    def hessian_with_jacobian(x, h=1e-5, is_h_dynamic=True):
         """
         Calcola l'Hessiana approssimata FD supportando h scalare o vettoriale.
         h_arg: può essere float (es. 1e-4) o array numpy di dimensione n (h_i per ogni x_i).
@@ -252,12 +252,13 @@ class BroydenProblem:
         n = len(x)
         
         # Gestione h scalare vs vettoriale
-        if np.isscalar(h_arg):
-            h_vec = np.full(n, h_arg)
-        else:
-            h_vec = np.asarray(h_arg)
+        if is_h_dynamic:
+            h_vec = h * np.abs(x)
             # Safety check: se h_i è 0 (perché x_i=0), imposta un minimo per evitare divisioni per zero
-            h_vec[h_vec == 0] = 1e-16
+            h_vec[h_vec == 0] = 1e-10
+        else:
+            h_vec = np.full(n, h)
+            
 
         diff_vectors = []
         
