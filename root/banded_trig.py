@@ -116,4 +116,61 @@ class BandedTrigonometric:
         h_diag = (val_plus - 2 * val_curr + val_minus) / (h ** 2)
         
         return diags(h_diag) #, 0, shape= (n,n))
+    
+    @staticmethod
+    def exact_gradient(x, h=None, is_h_dynamic=None):
+        """
+        Gradiente ESATTO della funzione semplificata:
+        F(x) = sum_{i=1}^n i(1-cos x_i) + 2 sum_{i=1}^{n-1} sin x_i - (n-1) sin x_n
 
+        g_i = i*sin(x_i) + 2*cos(x_i)            per i = 1,...,n-1
+        g_n = n*sin(x_n) - (n-1)*cos(x_n)
+        """
+        x = np.asarray(x)
+        n = len(x)
+        ids = np.arange(1, n + 1)
+
+        grad = ids * np.sin(x)
+        grad[:-1] += 2.0 * np.cos(x[:-1])
+        grad[-1]  += -(n - 1) * np.cos(x[-1])
+        return grad
+
+    @staticmethod
+    def exact_hessian(x, h=None, is_h_dynamic=None):
+        """
+        Hessiana ESATTA (diagonale) della funzione semplificata:
+
+        H_ii = i*cos(x_i) - 2*sin(x_i)           per i = 1,...,n-1
+        H_nn = n*cos(x_n) + (n-1)*sin(x_n)
+        """
+        x = np.asarray(x)
+        n = len(x)
+        ids = np.arange(1, n + 1)
+
+        hdiag = ids * np.cos(x)
+        hdiag[:-1] += -2.0 * np.sin(x[:-1])
+        hdiag[-1]  += (n - 1) * np.sin(x[-1])
+
+        return diags(hdiag, 0, shape=(n, n), format="csr")
+
+    @staticmethod
+    def hess_diag_fd_from_exact_grad(x, h=1e-5, is_h_dynamic=False, eps_min=1e-16):
+        """
+        Versione efficiente se ti basta la diagonale:
+        H_ii ≈ ( [∇F(x + h_i e_i)]_i - [∇F(x - h_i e_i)]_i ) / (2 h_i)
+        """
+        x = np.asarray(x, dtype=float)
+        n = x.size
+        
+
+        if is_h_dynamic:
+            h = h * np.abs(x)
+            h = np.maximum(h, eps_min)
+        else:
+            h = np.full(n, h, dtype=float)
+
+        g_plus  = BandedTrigonometric.exact_gradient(x + h)
+        g_minus = BandedTrigonometric.exact_gradient(x - h)
+
+        hdiag = (g_plus - g_minus) / (2.0 * h)   # elementwise = diag(H)
+        return diags(hdiag, 0, shape=(n, n), format='csr')

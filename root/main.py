@@ -6,7 +6,7 @@ from methods import NewtonMethods
 from utils import analyze_convergence, plot_convergence
 
 # --- CONFIGURAZIONE ---
-N = 4  # 100 Milioni: attenzione alla RAM!
+N = 100000  # 100 Milioni: attenzione alla RAM!
 K_MAX = 200
 TOL = 1e-8
 SEED = 358616
@@ -18,7 +18,7 @@ np.random.seed(SEED)
 #x0_bro = np.full(N,-1) # punto di partenza per broyden con tutti -1
 #x0_trig = np.random.uniform(0, 2, N)
 x0_bro = np.random.uniform(-2, 0, N) 
-x0_trig = np.ones(N) # punto di partenza per trigonometric con tutti 1
+x0_trig = np.random.uniform(0, 2, N) # punto di partenza per trigonometric con tutti 1
 
 hypercube_bro = np.random.uniform(-2, 0, (5, N))
 hypercube_tri = np.random.uniform(0, 2, (5, N))
@@ -27,6 +27,7 @@ print(f"Problem Size: {N}")
 print(f"Initial Cost Broyden: {BroydenProblem.func(x0_bro):.4e}")
 print(f"Initial Cost Banded Trigonometric: {BandedTrigonometric.func(x0_trig):.4e}")
 
+'''
 # ==========================================
 # 1. ESECUZIONE TRUNCATED NEWTON per BROYDEN
 # ==========================================
@@ -58,6 +59,7 @@ print("="*50)
 
 analyze_convergence(hist_tn)
 plot_convergence(hist_tn, "Truncated Newton for Broyden Tridiagonal") # Decommenta se vuoi il grafico
+
 
 
 # ==========================================
@@ -92,6 +94,8 @@ print("="*50)
 analyze_convergence(hist_mn)
 plot_convergence(hist_mn, "Modified Newton for Broyden Tridiagonal") # Decommenta se vuoi il grafico
 
+'''
+
 # ==========================================
 # 3. ESECUZIONE TRUNCATED NEWTON per BANDED TRIGONOMETRIC
 # ==========================================
@@ -104,14 +108,16 @@ start_time_tn_banded = time.perf_counter()
 xk_tn, fxk_tn, gradxk_norm_tn, k_tn, hist_tn_banded = NewtonMethods.truncated_newton(
     x0_trig, 
     BandedTrigonometric.func, 
-    BandedTrigonometric.gradient, 
-    BandedTrigonometric.hessian,
+    BandedTrigonometric.exact_gradient, 
+    BandedTrigonometric.hess_diag_fd_from_exact_grad,
     alpha0=1.0,
     kmax=K_MAX,
-    tolgrad=1e-4,
+    tolgrad=TOL,
     c1=1e-4, 
     rho=0.5, 
-    btmax=50
+    btmax=50,
+    dynamic=True,
+    h=1e-4
 )
 
 # --- STOP TIMER ---
@@ -158,6 +164,8 @@ print("="*50)
 analyze_convergence(hist_mn_banded)
 plot_convergence(hist_mn_banded, "Modified Newton for Banded Trigonometric") # Decommenta se vuoi il grafico
 
+'''
+
 # --- CONFRONTO FINALE TEMPI ---
 print("\n" + "*"*30)
 print("RIEPILOGO TEMPI DI ESECUZIONE")
@@ -169,3 +177,4 @@ print(f"Truncated Newton Banded Trigonometric:{execution_time_tn_banded:.4f} s")
 
 print("*"*30)
 
+'''
