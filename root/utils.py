@@ -105,7 +105,7 @@ def analyze_convergence(history):
         
     return np.mean(rates)
 
-import numpy as np
+
 
 def analyze_convergence1(history, tail=5):
     """
@@ -150,6 +150,11 @@ def analyze_convergence1(history, tail=5):
         e_kp1 = errors[k+1]
 
         denom = np.log(e_k / e_km1)
+        # NUOVO: Se l'errore è già sotto la precisione macchina,
+        # non ha senso stimare l'ordine qui. Esci o salta.
+        if e_k < 1e-14: 
+            break  # Smettiamo di raccogliere dati, siamo arrivati al fondo.
+        
         if abs(denom) < 1e-12:
             continue
 
