@@ -40,7 +40,8 @@ fieldnames = [
 ]
 
 print("\n" + "="*100)
-print("START"*20)
+print("==================  START  ==================")
+print(f"=========  {csv_filename}  ==========")
 print("="*100 + "\n")
 
 with open(csv_filename, mode="w", newline="") as f:
@@ -109,7 +110,8 @@ print(f"\nCSV salvato correttamente come: {csv_filename}")
 
 
 print("\n" + "="*100)
-print("START"*20)
+print("==================  START  ==================")
+print(f"=========  {csv_filename2}  ==========")
 print("="*100 + "\n")
 
 with open(csv_filename2, mode="w", newline="") as f:
@@ -177,7 +179,8 @@ print(f"\nCSV salvato correttamente come: {csv_filename2}")
 
 
 print("\n" + "="*100)
-print("START"*20)
+print("==================  START  ==================")
+print(f"=========  {csv_filename3}  ==========")
 print("="*100 + "\n")
 
 with open(csv_filename3, mode="w", newline="") as f:
@@ -245,7 +248,8 @@ print(f"\nCSV salvato correttamente come: {csv_filename3}")
 
 
 print("\n" + "="*100)
-print("START"*20)
+print("==================  START  ==================")
+print(f"=========  {csv_filename4}  ==========")
 print("="*100 + "\n")
 
 with open(csv_filename4, mode="w", newline="") as f:
@@ -323,7 +327,8 @@ fieldnames2 = [
 ]
 
 print("\n" + "="*100)
-print("START"*20)
+print("==================  START  ==================")
+print(f"=========  {csv_filename5}  ==========")
 print("="*100 + "\n")
 
 with open(csv_filename5, mode="w", newline="") as f:
@@ -379,7 +384,8 @@ print(f"\nCSV salvato correttamente come: {csv_filename5}")
 
 
 print("\n" + "="*100)
-print("START"*20)
+print("==================  START  ==================")
+print(f"=========  {csv_filename6}  ==========")
 print("="*100 + "\n")
 
 with open(csv_filename6, mode="w", newline="") as f:

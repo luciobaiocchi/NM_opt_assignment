@@ -66,7 +66,7 @@ class BroydenProblem:
             t_ip1 = get_term_val(v_kp1, val_k_mod, v_kp2)
             t_ip1[-1] = 0.0 # Bordo destro f_n
             
-            return 0.5 * (t_im1**2 + t_i**2 + t_ip1**2)
+            return 0.5 * (np.square(t_im1) + np.square(t_i) + np.square(t_ip1))
         
         if is_h_dynamic:
             h = h * np.abs(x)

@@ -149,17 +149,33 @@ def analyze_convergence1(history, tail=5):
         e_k   = errors[k]
         e_kp1 = errors[k+1]
 
-        denom = np.log(e_k / e_km1)
-        # NUOVO: Se l'errore è già sotto la precisione macchina,
-        # non ha senso stimare l'ordine qui. Esci o salta.
-        if e_k < 1e-14: 
-            break  # Smettiamo di raccogliere dati, siamo arrivati al fondo.
         
-        if abs(denom) < 1e-12:
+        # GUARDIA 1: Rumore di fondo
+        # Se l'errore è sotto 1e-12, stiamo guardando il rumore. Stop.
+        if e_k < 1e-12:
+            break
+        
+        # GUARDIA 2: Stagnazione (Evita i tassi = 60)
+        # Se l'errore non è cambiato abbastanza (es. meno dell'1%),
+        # il denominatore esploderà. Saltiamo.
+        if abs(e_k - e_km1) < 1e-8 * e_km1:
+            continue
+        # GUARDIA 3: Oscillazione (Evita i tassi negativi)
+        # Se l'errore cresce invece di diminuire, il log non ha senso per la convergenza
+        if e_k > e_km1 or e_kp1 > e_k:
+            continue
+        
+        denom = np.log(e_k / e_km1)
+        
+        if abs(denom) < 1e-10:
             continue
 
         p_k = np.log(e_kp1 / e_k) / denom
-        rates.append(p_k)
+        
+        # GUARDIA 4: Valori assurdi
+        # Un ordine di convergenza > 4 è fisicamente improbabile per metodi standard
+        if 0 < p_k < 5:
+            rates.append(p_k)
 
     if len(rates) == 0:
         return None

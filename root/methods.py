@@ -173,6 +173,7 @@ class NewtonMethods:
             # Questa operazione è O(N), molto più veloce di qualsiasi solver lineare.
             denominator = diag_H + tau
             
+            
             # Safety check per divisione per zero (estremamente raro grazie a beta, ma utile)
             if np.any(np.abs(denominator) < 1e-14):
                  pk = -grad_xk # Fallback al gradiente
@@ -272,6 +273,6 @@ class NewtonMethods:
             grad_norm = npl.norm(gradk)
             
             history.append({'k': k+1, 'x': xk.copy(), 'fx': fx, 'gnorm': grad_norm})
-#             history.append((k, f(xk), grad_norm))
+            #history.append((k, f(xk), grad_norm))
 
         return xk, fx, grad_norm, k, history

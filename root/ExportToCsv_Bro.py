@@ -18,12 +18,12 @@ dynamic_h = [True, False]
 n_list = [2, 100, 1000, 10000, 100000]
 
 # --- OUTPUT CSV ---
-csv_filename = "results_tn_broyden_exact_gradient.csv"
-csv_filename2 = "results_mn_broyden_exact_gradient.csv"
-csv_filename3 = "results_tn_broyden_all_aprox.csv"
-csv_filename4 = "results_mn_broyden_all_aprox.csv"
-csv_filename5 = "results_tn_broyden_all_exact.csv"
-csv_filename6 = "results_mn_broyden_all_exact.csv"
+csv_filename = "./results/results_tn_broyden_exact_gradient.csv"
+csv_filename2 = "./results/results_mn_broyden_exact_gradient.csv"
+csv_filename3 = "./results/results_tn_broyden_all_aprox.csv"
+csv_filename4 = "./results/results_mn_broyden_all_aprox.csv"
+csv_filename5 = "./results/results_tn_broyden_all_exact.csv"
+csv_filename6 = "./results/results_mn_broyden_all_exact.csv"
 
 
 fieldnames = [
@@ -42,7 +42,7 @@ fieldnames = [
 print("\n" + "="*100)
 print("START"*20)
 print("="*100 + "\n")
-
+'''
 with open(csv_filename, mode="w", newline="") as f:
     writer = csv.DictWriter(f, fieldnames=fieldnames)
     writer.writeheader()
@@ -80,7 +80,7 @@ with open(csv_filename, mode="w", newline="") as f:
                     # --- STOP TIMER ---
                     execution_time_tn = time.perf_counter() - start_time_tn
 
-                    convergence_rate = analyze_convergence1(hist_tn)
+                    convergence_rate = analyze_convergence1(hist_tn, tail=3)
                     success = (
                         "yes"
                         if (gradxk_norm_tn is not None and gradxk_norm_tn <= TOL and k_tn < K_MAX)
@@ -174,7 +174,7 @@ with open(csv_filename2, mode="w", newline="") as f:
 
 print(f"\nCSV salvato correttamente come: {csv_filename2}")
 
-
+'''
 
 print("\n" + "="*100)
 print("START"*20)
@@ -242,7 +242,7 @@ with open(csv_filename3, mode="w", newline="") as f:
 
 print(f"\nCSV salvato correttamente come: {csv_filename3}")
 
-
+'''
 
 print("\n" + "="*100)
 print("START"*20)
@@ -432,3 +432,4 @@ with open(csv_filename6, mode="w", newline="") as f:
 
 print(f"\nCSV salvato correttamente come: {csv_filename6}")
 
+'''
