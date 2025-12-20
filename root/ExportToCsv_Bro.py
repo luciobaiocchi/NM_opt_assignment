@@ -42,7 +42,7 @@ fieldnames = [
 print("\n" + "="*100)
 print("START"*20)
 print("="*100 + "\n")
-'''
+
 with open(csv_filename, mode="w", newline="") as f:
     writer = csv.DictWriter(f, fieldnames=fieldnames)
     writer.writeheader()
@@ -174,7 +174,7 @@ with open(csv_filename2, mode="w", newline="") as f:
 
 print(f"\nCSV salvato correttamente come: {csv_filename2}")
 
-'''
+
 
 print("\n" + "="*100)
 print("START"*20)
@@ -242,7 +242,7 @@ with open(csv_filename3, mode="w", newline="") as f:
 
 print(f"\nCSV salvato correttamente come: {csv_filename3}")
 
-'''
+
 
 print("\n" + "="*100)
 print("START"*20)
@@ -432,4 +432,3 @@ with open(csv_filename6, mode="w", newline="") as f:
 
 print(f"\nCSV salvato correttamente come: {csv_filename6}")
 
-'''

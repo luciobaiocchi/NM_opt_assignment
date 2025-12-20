@@ -151,7 +151,7 @@ class NewtonMethods:
             # 1. Calcolo Hessiana Sparsa
             # Per il problema trigonometrico, hessf ritorna una matrice sparse.
             # Estraiamo subito la diagonale come array numpy 1D.
-            H_sparse = hessf(xk, h, dynamic)
+            H_sparse = hessf(xk)
             diag_H = H_sparse.diagonal() 
             
             # --- NEWTON MODIFICATO (Diagonal Correction) ---
@@ -219,7 +219,7 @@ class NewtonMethods:
                 print(f"Convergenza raggiunta all'iterazione {k}")
                 return xk, f(xk), grad_norm, k, history
             
-            B= hessf(xk, h, is_h_dynamic=dynamic)
+            B= hessf(xk)
 
             eta_k = min(0.5, np.sqrt(grad_norm))
             

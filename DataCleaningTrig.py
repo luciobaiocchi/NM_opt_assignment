@@ -43,7 +43,7 @@ summary_tn_trig_exact = (
 )
 
 summary_tn_trig_exact_fmt = format_sigfig(summary_tn_trig_exact, cols_sigfig)
-summary_tn_trig_exact_fmt.to_csv("summary_tn_trig_exact.csv", index=False)
+summary_tn_trig_exact_fmt.to_csv("./summary/summary_tn_trig_exact.csv", index=False)
 
 ##############################################################################
 ############# MODIFIED NEWTON BROYDEN ALL EXACT #############################
@@ -67,7 +67,7 @@ summary_mn_trig_exact = (
 )
 
 summary_mn_trig_exact_fmt = format_sigfig(summary_mn_trig_exact, cols_sigfig)
-summary_mn_trig_exact_fmt.to_csv("summary_mn_trig_exact.csv", index=False)
+summary_mn_trig_exact_fmt.to_csv("./summary/summary_mn_trig_exact.csv", index=False)
 
 ##############################################################################
 ######## TRUNCATED NEWTON BROYDEN EXACT Gradient + Approx Hessian #############
@@ -92,7 +92,7 @@ summary_tn_trig_ex_grad = (
 )
 
 summary_tn_trig_ex_grad_fmt = format_sigfig(summary_tn_trig_ex_grad, cols_sigfig)
-summary_tn_trig_ex_grad_fmt.to_csv("summary_tn_trig_ex_grad.csv", index=False)
+summary_tn_trig_ex_grad_fmt.to_csv("./summary/summary_tn_trig_ex_grad.csv", index=False)
 
 ##############################################################################
 ######## MODIFIED NEWTON BROYDEN EXACT Gradient + Approx Hessian ##############
@@ -117,7 +117,7 @@ summary_mn_trig_ex_grad = (
 )
 
 summary_mn_trig_ex_grad_fmt = format_sigfig(summary_mn_trig_ex_grad, cols_sigfig)
-summary_mn_trig_ex_grad_fmt.to_csv("summary_mn_trig_ex_grad.csv", index=False)
+summary_mn_trig_ex_grad_fmt.to_csv("./summary/summary_mn_trig_ex_grad.csv", index=False)
 
 ##############################################################################
 ###### TRUNCATED NEWTON BROYDEN Approx Gradient + Approx Hessian ##############
@@ -142,7 +142,7 @@ summary_tn_trig_all_aprox = (
 )
 
 summary_tn_trig_all_aprox_fmt = format_sigfig(summary_tn_trig_all_aprox, cols_sigfig)
-summary_tn_trig_all_aprox_fmt.to_csv("summary_tn_trig_all_aprox.csv", index=False)
+summary_tn_trig_all_aprox_fmt.to_csv("./summary/summary_tn_trig_all_aprox.csv", index=False)
 
 ##############################################################################
 ###### MODIFIED NEWTON BROYDEN Approx Gradient + Approx Hessian ##############
@@ -167,4 +167,4 @@ summary_mn_trig_all_aprox = (
 )
 
 summary_mn_trig_all_aprox_fmt = format_sigfig(summary_mn_trig_all_aprox, cols_sigfig)
-summary_mn_trig_all_aprox_fmt.to_csv("summary_mn_trig_all_aprox.csv", index=False)
+summary_mn_trig_all_aprox_fmt.to_csv("./summary/summary_mn_trig_all_aprox.csv", index=False)
