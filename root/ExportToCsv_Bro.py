@@ -8,7 +8,7 @@ from utils import analyze_convergence1, plot_convergence
 
 # --- CONFIGURAZIONE ---
 K_MAX = 200
-TOL = 1e-8
+TOL = 1e-6
 SEED = 358616
 
 np.random.seed(SEED)

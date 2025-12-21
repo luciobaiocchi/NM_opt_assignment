@@ -17,6 +17,8 @@ h_values = [1e-4, 1e-8, 1e-12]
 dynamic_h = [True, False]
 n_list = [2, 100, 1000, 10000, 100000]
 
+
+
 # --- OUTPUT CSV ---
 csv_filename = "./results/results_tn_trig_exact_gradient.csv"
 csv_filename2 = "./results/results_mn_trig_exact_gradient.csv"
@@ -39,6 +41,8 @@ fieldnames = [
     "time"
 ]
 
+
+
 print("\n" + "="*100)
 print("==================  START  ==================")
 print(f"=========  {csv_filename}  ==========")
@@ -60,6 +64,11 @@ with open(csv_filename, mode="w", newline="") as f:
                 point = 0
 
                 for x in hypercube_trig:
+
+                    hess_wrapper_mixed = lambda x: BandedTrigonometric.hess_diag_fd_from_exact_grad(
+                    x, h=h, is_h_dynamic=dynamic
+                    )
+                    
                     # --- AVVIO TIMER ---
                     start_time_tn = time.perf_counter()
 
@@ -67,7 +76,7 @@ with open(csv_filename, mode="w", newline="") as f:
                         x,
                         BandedTrigonometric.func,
                         BandedTrigonometric.exact_gradient,
-                        BandedTrigonometric.hess_diag_fd_from_exact_grad,
+                        hess_wrapper_mixed,
                         alpha0=1.0,
                         kmax=K_MAX,
                         tolgrad=TOL,
@@ -108,7 +117,6 @@ print(f"\nCSV salvato correttamente come: {csv_filename}")
 
 
 
-
 print("\n" + "="*100)
 print("==================  START  ==================")
 print(f"=========  {csv_filename2}  ==========")
@@ -131,13 +139,18 @@ with open(csv_filename2, mode="w", newline="") as f:
 
                 for x in hypercube_trig:
                     # --- AVVIO TIMER ---
+
+                    hess_wrapper_mixed = lambda x: BandedTrigonometric.hess_diag_fd_from_exact_grad(
+                    x, h=h, is_h_dynamic=dynamic
+                    )
+
                     start_time_mn = time.perf_counter()
 
                     xk_mn, fxk_mn, gradxk_norm_mn, k_mn, hist_mn = NewtonMethods.modified_newton_single_diag(
                         x,
                         BandedTrigonometric.func,
                         BandedTrigonometric.exact_gradient,
-                        BandedTrigonometric.hess_diag_fd_from_exact_grad,
+                        hess_wrapper_mixed,
                         alpha0=1.0,
                         kmax=K_MAX,
                         tolgrad=TOL,
@@ -200,13 +213,14 @@ with open(csv_filename3, mode="w", newline="") as f:
 
                 for x in hypercube_trig:
                     # --- AVVIO TIMER ---
+
                     start_time_tn = time.perf_counter()
 
                     xk_tn, fxk_tn, gradxk_norm_tn, k_tn, hist_tn = NewtonMethods.truncated_newton(
                         x,
                         BandedTrigonometric.func,
                         BandedTrigonometric.gradient,
-                        BandedTrigonometric.hess_diag_fd_from_exact_grad,
+                        BandedTrigonometric.hessian,
                         alpha0=1.0,
                         kmax=K_MAX,
                         tolgrad=TOL,
@@ -269,6 +283,7 @@ with open(csv_filename4, mode="w", newline="") as f:
 
                 for x in hypercube_trig:
                     # --- AVVIO TIMER ---
+    
                     start_time_mn = time.perf_counter()
 
                     xk_mn, fxk_mn, gradxk_norm_mn, k_mn, hist_mn = NewtonMethods.modified_newton_single_diag(
@@ -315,6 +330,7 @@ with open(csv_filename4, mode="w", newline="") as f:
 print(f"\nCSV salvato correttamente come: {csv_filename4}")
 
 
+
 fieldnames2 = [
     "Point ID",
     "n",
@@ -325,6 +341,7 @@ fieldnames2 = [
     "convergence_rate",
     "time"
 ]
+
 
 print("\n" + "="*100)
 print("==================  START  ==================")
@@ -380,6 +397,7 @@ with open(csv_filename5, mode="w", newline="") as f:
             point+=1
 
 print(f"\nCSV salvato correttamente come: {csv_filename5}")
+
 
 
 

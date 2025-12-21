@@ -160,7 +160,7 @@ class NewtonMethods:
             
             min_diag_val = np.min(diag_H)
             tau = 0.0
-            beta = 1e-3
+            beta = 1
             
             # Se l'elemento minimo è negativo o zero, la matrice non è definita positiva.
             # Dobbiamo aggiungere tau tale che: min_val + tau > 0
