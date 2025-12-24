@@ -61,11 +61,11 @@ for N in n_list:
             print(f"--------- START: modified_newton_single_diag for BandedTrigonometric ---------")
             # --- AVVIO TIMER ---
             start_time_tn = time.perf_counter()
-            xk_tn, fxk_tn, gradxk_norm_tn, k_tn, hist_tn = NewtonMethods.modified_newton_single_diag(
+            xk_tn, fxk_tn, gradxk_norm_tn, k_tn, hist_tn = NewtonMethods.modified_newton_trig(
                 x, 
                 BandedTrigonometric.func, 
-                BandedTrigonometric.gradient, 
-                BandedTrigonometric.hessian,
+                BandedTrigonometric.gradient_fd, 
+                BandedTrigonometric.hessian_fd,
                 alpha0=1.0,
                 kmax=K_MAX,
                 tolgrad=TOL,

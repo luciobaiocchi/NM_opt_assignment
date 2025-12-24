@@ -97,7 +97,7 @@ def plot_rates_for_dimension(n, histories_dict, title_suffix, save_filename=None
             iters_smooth = iters[len(iters) - len(rates_smooth):]
             
             ax.plot(iters_smooth, rates_smooth, color=color, alpha=1.0, linewidth=2.5, 
-                    label=f"{label} (Smooth)")
+                    label=f"{label} (Moving AVG)")
             
             # Mark the final point to see where it ended
             ax.scatter(iters_smooth[-1], rates_smooth[-1], color=color, s=40, zorder=5)
@@ -158,7 +158,7 @@ def run_full_analysis():
     # Strategies: (Label, is_dynamic_flag)
     strategies = [("Fixed h", False), ("Dynamic h", True)]
     Problem = BandedTrigonometric
-    Method = NewtonMethods.modified_newton_single_diag
+    Method = NewtonMethods.modified_newton_trig
     
     # Cartella Output
     OUTPUT_DIR = "./plots/BandedTrigMN"
@@ -185,7 +185,7 @@ def run_full_analysis():
         for label, x0 in start_points:
             # A. Exact
             _, _, gnorm, _, hist = Method(
-                x0, Problem.func, Problem.exact_gradient, Problem.exact_hessian,
+                x0, Problem.func, Problem.gradient_exact, Problem.hessian_exact,
                 alpha0=1.0, kmax=K_MAX, tolgrad=TOL, c1=1e-4, rho=0.5, btmax=50
             )
             if gnorm <= TOL: res_exact[label] = hist
@@ -195,16 +195,16 @@ def run_full_analysis():
                     h_val = 10**(-k_pow)
                     
                     # B. Mixed FD
-                    hess_wrapper = lambda x: Problem.hess_diag_fd_from_exact_grad(x, h=h_val, is_h_dynamic=is_dyn)
+                    hess_wrapper = lambda x: Problem.hessian_with_jacobian(x, h=h_val, is_h_dynamic=is_dyn)
                     _, _, gnorm_m, _, hist_m = Method(
-                        x0, Problem.func, Problem.exact_gradient, hess_wrapper,     
+                        x0, Problem.func, Problem.gradient_exact, hess_wrapper,     
                         alpha0=1.0, kmax=K_MAX, tolgrad=TOL, c1=1e-4, rho=0.5, btmax=50, dynamic=is_dyn, h=h_val   
                     )
                     if gnorm_m <= TOL: res_mixed[strat_name][k_pow][label] = hist_m
 
                     # C. Full FD
                     _, _, gnorm_f, _, hist_f = Method(
-                        x0, Problem.func, Problem.gradient, Problem.hessian, 
+                        x0, Problem.func, Problem.gradient_fd, Problem.hessian_fd, 
                         alpha0=1.0, kmax=K_MAX, tolgrad=TOL, c1=1e-4, rho=0.5, btmax=50, dynamic=is_dyn, h=h_val 
                     )
                     if gnorm_f <= TOL: res_full[strat_name][k_pow][label] = hist_f

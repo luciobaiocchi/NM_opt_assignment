@@ -53,7 +53,7 @@ for strat in strategies:
         xk, fx, gnorm, iters, hist = NewtonMethods.truncated_newton(
             x0_bro, 
             BroydenProblem.func, 
-            BroydenProblem.exact_gradient, 
+            BroydenProblem.gradient_exact, 
             hessian_wrapper,  # <--- Passiamo il wrapper configurato
             alpha0=1.0, 
             kmax=K_MAX, 

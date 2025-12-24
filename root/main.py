@@ -108,8 +108,8 @@ start_time_tn_banded = time.perf_counter()
 xk_tn, fxk_tn, gradxk_norm_tn, k_tn, hist_tn_banded = NewtonMethods.truncated_newton(
     x0_trig, 
     BandedTrigonometric.func, 
-    BandedTrigonometric.exact_gradient, 
-    BandedTrigonometric.hess_diag_fd_from_exact_grad,
+    BandedTrigonometric.gradient_exact, 
+    BandedTrigonometric.hessian_with_jacobian,
     alpha0=1.0,
     kmax=K_MAX,
     tolgrad=TOL,
@@ -141,11 +141,11 @@ print(BandedTrigonometric.func(x0_trig))
 # --- AVVIO TIMER ---
 start_time_mn_banded = time.perf_counter()
 
-xk_tn, fxk_tn, gradxk_norm_tn, k_tn, hist_mn_banded = NewtonMethods.modified_newton_banded(
+xk_tn, fxk_tn, gradxk_norm_tn, k_tn, hist_mn_banded = NewtonMethods.modified_newton_bro(
     x0_trig, 
     BandedTrigonometric.func, 
-    BandedTrigonometric.gradient, 
-    BandedTrigonometric.hessian,
+    BandedTrigonometric.gradient_fd, 
+    BandedTrigonometric.hessian_fd,
     alpha0=1.0,
     kmax=K_MAX,
     tolgrad=1e-6,

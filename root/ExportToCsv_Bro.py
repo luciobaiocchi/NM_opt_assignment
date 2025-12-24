@@ -15,7 +15,7 @@ np.random.seed(SEED)
 
 h_values = [1e-4, 1e-8, 1e-12]
 dynamic_h = [True, False]
-n_list = [2, 100, 1000, 10000, 100000]
+n_list = [2, 1000, 10000, 100000]
 
 # --- OUTPUT CSV ---
 csv_filename = "./results/results_tn_broyden_exact_gradient.csv"
@@ -65,7 +65,7 @@ with open(csv_filename, mode="w", newline="") as f:
                     xk_tn, fxk_tn, gradxk_norm_tn, k_tn, hist_tn = NewtonMethods.truncated_newton(
                         x,
                         BroydenProblem.func,
-                        BroydenProblem.exact_gradient,
+                        BroydenProblem.gradient_exact,
                         BroydenProblem.hessian_with_jacobian,
                         alpha0=1.0,
                         kmax=K_MAX,
@@ -131,10 +131,10 @@ with open(csv_filename2, mode="w", newline="") as f:
                     # --- AVVIO TIMER ---
                     start_time_mn = time.perf_counter()
 
-                    xk_mn, fxk_mn, gradxk_norm_mn, k_mn, hist_mn = NewtonMethods.modified_newton_banded(
+                    xk_mn, fxk_mn, gradxk_norm_mn, k_mn, hist_mn = NewtonMethods.modified_newton_bro(
                         x,
                         BroydenProblem.func,
-                        BroydenProblem.exact_gradient,
+                        BroydenProblem.gradient_exact,
                         BroydenProblem.hessian_with_jacobian,
                         alpha0=1.0,
                         kmax=K_MAX,
@@ -202,8 +202,8 @@ with open(csv_filename3, mode="w", newline="") as f:
                     xk_tn, fxk_tn, gradxk_norm_tn, k_tn, hist_tn = NewtonMethods.truncated_newton(
                         x,
                         BroydenProblem.func,
-                        BroydenProblem.gradient,
-                        BroydenProblem.hessian_sparse,
+                        BroydenProblem.gradient_fd,
+                        BroydenProblem.hessian_fd,
                         alpha0=1.0,
                         kmax=K_MAX,
                         tolgrad=TOL,
@@ -267,11 +267,11 @@ with open(csv_filename4, mode="w", newline="") as f:
                     # --- AVVIO TIMER ---
                     start_time_mn = time.perf_counter()
 
-                    xk_mn, fxk_mn, gradxk_norm_mn, k_mn, hist_mn = NewtonMethods.modified_newton_banded(
+                    xk_mn, fxk_mn, gradxk_norm_mn, k_mn, hist_mn = NewtonMethods.modified_newton_bro(
                         x,
                         BroydenProblem.func,
-                        BroydenProblem.gradient,
-                        BroydenProblem.hessian_sparse,
+                        BroydenProblem.gradient_fd,
+                        BroydenProblem.hessian_fd,
                         alpha0=1.0,
                         kmax=K_MAX,
                         tolgrad=TOL,
@@ -342,8 +342,8 @@ with open(csv_filename5, mode="w", newline="") as f:
             xk_tn, fxk_tn, gradxk_norm_tn, k_tn, hist_tn = NewtonMethods.truncated_newton(
                 x,
                 BroydenProblem.func,
-                BroydenProblem.exact_gradient,
-                BroydenProblem.exact_hessian,
+                BroydenProblem.gradient_exact,
+                BroydenProblem.hessian_exact,
                 alpha0=1.0,
                 kmax=K_MAX,
                 tolgrad=TOL,
@@ -395,11 +395,11 @@ with open(csv_filename6, mode="w", newline="") as f:
         for x in hypercube_bro:
             # --- AVVIO TIMER ---
             start_time_mn = time.perf_counter()
-            xk_mn, fxk_mn, gradxk_norm_mn, k_mn, hist_mn = NewtonMethods.modified_newton_banded(
+            xk_mn, fxk_mn, gradxk_norm_mn, k_mn, hist_mn = NewtonMethods.modified_newton_bro(
                 x,
                 BroydenProblem.func,
-                BroydenProblem.exact_gradient,
-                BroydenProblem.exact_hessian,
+                BroydenProblem.gradient_exact,
+                BroydenProblem.hessian_exact,
                 alpha0=1.0,
                 kmax=K_MAX,
                 tolgrad=TOL,

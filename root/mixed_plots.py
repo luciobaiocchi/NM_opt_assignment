@@ -2,7 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import numpy.linalg as npl
 from matplotlib.ticker import MaxNLocator
-import os  # <--- NUOVO IMPORT NECESSARIO
+import os
+from utils import analyze_convergence1
+
 
 # --- Import dei tuoi moduli ---
 from broyden import BroydenProblem
@@ -70,7 +72,7 @@ def plot_combined_panel(problem_class, histories, title, x_bounds=(-2.5, 0.5), y
             pt = np.array([X[i, j], Y[i, j]])
             Z[i, j] = problem_class.func(pt)
 
-    ax1.contourf(X, Y, Z, levels=30, cmap='jet', alpha=0.5, linewidths=1)
+    ax1.contourf(X, Y, Z, levels=30, cmap='coolwarm', alpha=0.4, linewidths=1)
 
     for idx, (lbl, hist) in enumerate(histories):
         try:
@@ -80,8 +82,8 @@ def plot_combined_panel(problem_class, histories, title, x_bounds=(-2.5, 0.5), y
             xs = [h[0][0] for h in hist]
             ys = [h[0][1] for h in hist]
         
-        ax1.plot(xs, ys, marker='o', markersize=4, linestyle='-', linewidth=1.5, 
-                 label=lbl, color=colors[idx], alpha=0.9)
+        ax1.plot(xs, ys, marker='o', markersize=4, linestyle='-', linewidth=2, 
+                 label=lbl, color=colors[idx], alpha=1)
         ax1.plot(xs[0], ys[0], marker='x', color='black', markersize=6, markeredgewidth=2)
         ax1.plot(xs[-1], ys[-1], marker='*', color='red', markersize=10, zorder=5)
 
@@ -142,25 +144,38 @@ def run_combined_analysis():
     np.random.seed(SEED)
     N = 2
     K_MAX = 200
-    TOL = 1e-8
-    
-    # Cartella di output
-    OUTPUT_DIR = "plots_output"
-    if not os.path.exists(OUTPUT_DIR):
-        os.makedirs(OUTPUT_DIR)
-        print(f"Creata cartella di output: {OUTPUT_DIR}")
-
+    TOL = 1e-4
+    Problem = BandedTrigonometric
+    Method = NewtonMethods.truncated_newton
     start_points = []
-    start_points.append( ("Suggested", -np.ones(N)) )
-    rand_pts = np.random.uniform(-2, 0, (5, N))
+    
+    #BRO 
+    #bounds_x = (-2.5, 0.5)
+    #bounds_y = (-2.5, 0.5)
+    #OUTPUT_DIR = "plots_output/bro/mn"
+    #OUTPUT_DIR = "plots_output/bro/tc"
+    #start_points.append( ("Suggested", -np.ones(N)) )
+    #rand_pts = np.random.uniform(-2, 0, (5, N))
+    #for i, pt in enumerate(rand_pts):
+    #    start_points.append( (f"Rnd{i+1}", pt) )
+    
+    #TRI
+    #bounds_x = (-3.5, 2)
+    #bounds_y = (-2, 2.5)
+    bounds_x = (-10, 5)
+    bounds_y = (-10, 5)
+    #OUTPUT_DIR = "plots_output/tri/mn"
+    OUTPUT_DIR = "plots_output/tri/tc"
+    start_points.append( ("Suggested", np.ones(N)) )
+    rand_pts = np.random.uniform(0, 2, (5, N))
     for i, pt in enumerate(rand_pts):
         start_points.append( (f"Rnd{i+1}", pt) )
 
-    Problem = BroydenProblem
-    Method = NewtonMethods.modified_newton_banded
+
+    if not os.path.exists(OUTPUT_DIR):
+        os.makedirs(OUTPUT_DIR)
+        print(f"Creata cartella di output: {OUTPUT_DIR}")
     
-    bounds_x = (-2.5, 0.5)
-    bounds_y = (-2.5, 0.5)
     
     h_exponents = [4, 8, 12]
     strategies = [("Fixed", False), ("Dynamic", True)]
@@ -171,7 +186,7 @@ def run_combined_analysis():
     hist_exact = []
     for lbl, x0 in start_points:
         _, _, _, _, h = Method(
-            x0, Problem.func, Problem.exact_gradient, Problem.exact_hessian,
+            x0, Problem.func, Problem.gradient_exact, Problem.hessian_exact,
             alpha0=1.0, kmax=K_MAX, tolgrad=TOL, c1=1e-4, rho=0.5, btmax=50
         )
         hist_exact.append((lbl, h))
@@ -197,7 +212,7 @@ def run_combined_analysis():
                 # A. MIXED
                 hess_wrapper = lambda x: Problem.hessian_with_jacobian(x, h=h_val, is_h_dynamic=is_dyn)
                 _, _, _, _, h_m = Method(
-                    x0, Problem.func, Problem.exact_gradient, hess_wrapper,
+                    x0, Problem.func, Problem.gradient_exact, hess_wrapper,
                     alpha0=1.0, kmax=K_MAX, tolgrad=TOL, c1=1e-4, rho=0.5, btmax=50,
                     dynamic=is_dyn, h=h_val
                 )
@@ -205,7 +220,7 @@ def run_combined_analysis():
                 
                 # B. FULL                
                 _, _, _, _, h_f = Method(
-                    x0, Problem.func, Problem.gradient, Problem.hessian_sparse,
+                    x0, Problem.func, Problem.gradient_fd, Problem.hessian_fd,
                     alpha0=1.0, kmax=K_MAX, tolgrad=TOL, c1=1e-4, rho=0.5, btmax=50,
                     dynamic=is_dyn, h=h_val
                 )

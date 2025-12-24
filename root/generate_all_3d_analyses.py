@@ -92,7 +92,7 @@ def run_all_3d_analyses():
     # --- SETUP PROBLEMA BANDED TRIGONOMETRIC ---
     Problem = BroydenProblem
     # Usiamo il metodo diagonale specifico per questo problema
-    Method = NewtonMethods.modified_newton_banded 
+    Method = NewtonMethods.modified_newton_bro 
     
     # Bounds corretti per visualizzare convergenza a 0 partendo da [0, 2]
     bounds = (-2.5, 2.5) 
@@ -119,7 +119,7 @@ def run_all_3d_analyses():
     hist_exact = []
     for lbl, x0 in start_points:
         _, _, _, _, h = Method(
-            x0, Problem.func, Problem.exact_gradient, Problem.exact_hessian,
+            x0, Problem.func, Problem.gradient_exact, Problem.hessian_exact,
             alpha0=1.0, kmax=K_MAX, tolgrad=TOL, c1=1e-4, rho=0.5, btmax=50
         )
         hist_exact.append((lbl, h))
@@ -150,7 +150,7 @@ def run_all_3d_analyses():
                 hess_wrapper = lambda x: Problem.hessian_with_jacobian(x, h=h_val, is_h_dynamic=is_dyn)
                 
                 _, _, _, _, h_m = Method(
-                    x0, Problem.func, Problem.exact_gradient, hess_wrapper,
+                    x0, Problem.func, Problem.gradient_exact, hess_wrapper,
                     alpha0=1.0, kmax=K_MAX, tolgrad=TOL, c1=1e-4, rho=0.5, btmax=50,
                     dynamic=is_dyn, h=h_val
                 )
@@ -160,7 +160,7 @@ def run_all_3d_analyses():
                 # Gradient: Calcolato internamente con h passato
                 # Hessian: Problem.hessian (metodo standard con FD)
                 _, _, _, _, h_f = Method(
-                    x0, Problem.func, Problem.gradient, Problem.hessian_sparse,
+                    x0, Problem.func, Problem.gradient_fd, Problem.hessian_fd,
                     alpha0=1.0, kmax=K_MAX, tolgrad=TOL, c1=1e-4, rho=0.5, btmax=50,
                     dynamic=is_dyn, h=h_val
                 )

@@ -41,7 +41,7 @@ class BroydenProblem:
         return F_x
 
     @staticmethod
-    def gradient(x, h=1e-5, is_h_dynamic=True):
+    def gradient_fd(x, h=1e-5, is_h_dynamic=True):
         n = len(x)
         xp = np.pad(x, (2, 2), mode='constant', constant_values=0)
         
@@ -84,7 +84,7 @@ class BroydenProblem:
 
     @staticmethod
 
-    def hessian_sparse(x, h=1e-5, is_h_dynamic=True):
+    def hessian_fd(x, h=1e-5, is_h_dynamic=True):
         n = len(x)
 
         xp = np.pad(x, (2, 2), mode='constant', constant_values=0)
@@ -241,7 +241,7 @@ class BroydenProblem:
         return f_vec
 
     @staticmethod
-    def exact_gradient(x, h=None, is_h_dynamic=None):
+    def gradient_exact(x, h=None, is_h_dynamic=None):
         """
         Calcola il gradiente esatto analitico di F(x).
         Grad F(x) = J^T * f(x)
@@ -285,8 +285,8 @@ class BroydenProblem:
             
             # Differenza finita centrata
             # Calcoliamo solo la differenza grezza qui (numerator)
-            g_plus = BroydenProblem.exact_gradient(x + p)
-            g_minus = BroydenProblem.exact_gradient(x - p)
+            g_plus = BroydenProblem.gradient_exact(x + p)
+            g_minus = BroydenProblem.gradient_exact(x - p)
             
             diff = (g_plus - g_minus) 
             diff_vectors.append(diff)
@@ -327,7 +327,7 @@ class BroydenProblem:
         )
     
     @staticmethod
-    def exact_hessian(x, h=None, is_h_dynamic=None):
+    def hessian_exact(x, h=None, is_h_dynamic=None):
         """
         Hessiana esatta di F(x) = 0.5 * ||f(x)||^2:
             ∇²F(x) = J(x)^T J(x) + Σ_i f_i(x) ∇² f_i(x)

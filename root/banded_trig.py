@@ -39,7 +39,7 @@ class BandedTrigonometric:
         return F_x
     
     @staticmethod
-    def gradient(x, h=1e-5, is_h_dynamic=False):
+    def gradient_fd(x, h=1e-5, is_h_dynamic=False):
         """
         Calcola il gradiente usando Differenze Finite Centrate 
         sulla versione SEMPLIFICATA algebricamente della funzione.
@@ -88,7 +88,7 @@ class BandedTrigonometric:
         return grad
     
     @staticmethod
-    def hessian(x, h=1e-5, is_h_dynamic=False):
+    def hessian_fd(x, h=1e-5, is_h_dynamic=False):
         x = np.asarray(x)
         n = len(x)
         ids = np.arange(1, n + 1)
@@ -118,7 +118,7 @@ class BandedTrigonometric:
         return diags(h_diag) #, 0, shape= (n,n))
     
     @staticmethod
-    def exact_gradient(x, h=None, is_h_dynamic=None):
+    def gradient_exact(x, h=None, is_h_dynamic=None):
         """
         Gradiente ESATTO della funzione semplificata:
         F(x) = sum_{i=1}^n i(1-cos x_i) + 2 sum_{i=1}^{n-1} sin x_i - (n-1) sin x_n
@@ -136,7 +136,7 @@ class BandedTrigonometric:
         return grad
 
     @staticmethod
-    def exact_hessian(x, h=None, is_h_dynamic=None):
+    def hessian_exact(x, h=None, is_h_dynamic=None):
         """
         Hessiana ESATTA (diagonale) della funzione semplificata:
 
@@ -154,7 +154,7 @@ class BandedTrigonometric:
         return diags(hdiag, 0, shape=(n, n), format="csr")
 
     @staticmethod
-    def hess_diag_fd_from_exact_grad(x, h=1e-5, is_h_dynamic=False, eps_min=1e-16):
+    def hessian_with_jacobian(x, h=1e-5, is_h_dynamic=False, eps_min=1e-16):
         """
         Versione efficiente se ti basta la diagonale:
         H_ii ≈ ( [∇F(x + h_i e_i)]_i - [∇F(x - h_i e_i)]_i ) / (2 h_i)
@@ -169,8 +169,8 @@ class BandedTrigonometric:
         else:
             h = np.full(n, h, dtype=float)
 
-        g_plus  = BandedTrigonometric.exact_gradient(x + h)
-        g_minus = BandedTrigonometric.exact_gradient(x - h)
+        g_plus  = BandedTrigonometric.gradient_exact(x + h)
+        g_minus = BandedTrigonometric.gradient_exact(x - h)
 
         hdiag = (g_plus - g_minus) / (2.0 * h)   # elementwise = diag(H)
         return diags(hdiag, 0, shape=(n, n), format='csr')
