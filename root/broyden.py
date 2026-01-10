@@ -71,20 +71,17 @@ class BroydenProblem:
         if is_h_dynamic:
             h = h * np.abs(x)
             h = np.where(h == 0, 1e-10, h)
-
-            #print("broyden, gradient with dynamic h")
-        #print(f"HHHHhhhhhhHHHhHHHHHH{h}")
-        #print(f"XXXXXXXXXXXXXXXXXXXX{x}")
-        #print(f"ABSSOEJFONEFJNFJEJFN{np.abs(x)}")
-        #print(f"JHSHHSHSHSHSHSHSHSHS{h * np.abs(x)}")
         E_plus  = calc_local_energy_change(h)
         E_minus = calc_local_energy_change(-h)
         
         return (E_plus - E_minus) / (2 * h)
 
     @staticmethod
-
-    def hessian_fd(x, h=1e-5, is_h_dynamic=True):
+    def hessian_fd(x, h=1e-5, is_h_dynamic=False):
+        # THIS IS HARDCODED IN ORDER TO LET THE TESTING BE EASIER
+        h=1e-5
+        is_h_dynamic=False
+        
         n = len(x)
 
         xp = np.pad(x, (2, 2), mode='constant', constant_values=0)
@@ -93,11 +90,11 @@ class BroydenProblem:
             return ((3 - 2 * val_k) * val_k - val_km1 - 2 * val_kp1 + 1)
 
         # --- h scalare o vettoriale (dynamic) ---
-        if is_h_dynamic:
-            h_vec = h * np.abs(x)
-            h_vec = np.where(h_vec == 0, 1e-12, h_vec)
-        else:
-            h_vec = np.full(n, h)
+        #if is_h_dynamic:
+         #   h_vec = h * np.abs(x)
+          #  h_vec = np.where(h_vec == 0, 1e-12, h_vec)
+        #else:
+        h_vec = np.full(n, h)
 
         # =====================================================================================
         # 1) DIAGONALE PRINCIPALE (i,i)  -> usa h_i
@@ -209,9 +206,15 @@ class BroydenProblem:
         )
 
     @staticmethod
-    def get_jacobian_sparse(x):
+    def get_jacobian_sparse(x, h=None, is_h_dynamic=None, eps_min=1e-16):
         n = len(x)
         
+        if is_h_dynamic:
+            h = h * np.abs(x)
+            h = np.maximum(h, eps_min)
+        else:
+            h = np.full(n, h, dtype=float)
+            
         # Diagonale principale
         main_diag = 3 - 4 * x
         

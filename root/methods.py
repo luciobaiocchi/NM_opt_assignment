@@ -43,7 +43,7 @@ class NewtonMethods:
 
         history.append({'k': 0, 'x': xk.copy(), 'fx': fx, 'gnorm': gradfk_norm})
         
-        print(f"--------- START: Modified Newton with BANDED Cholesky. N={n} ---------")
+        #print(f"--------- START: Modified Newton with BANDED Cholesky. N={n} ---------")
         
         while k < kmax and gradfk_norm > tolgrad:
             H_sparse = hessf(xk)
@@ -141,13 +141,13 @@ class NewtonMethods:
 
         history.append({'k': 0, 'x': xk.copy(), 'fx': fx, 'gnorm': gradfk_norm})
         
-        print(f"--------- START: Modified Newton DIAGONAL (Trigonometric). N={n} ---------")
+        #print(f"--------- START: Modified Newton DIAGONAL (Trigonometric). N={n} ---------")
         
         while k < kmax and gradfk_norm > tolgrad:
             # 1. Sparse Hessian Computation
             # For the trigonometric problem, hessf returns a sparse matrix.
             # We immediately extract the diagonal as a 1D numpy array.
-            H_sparse = hessf(xk)
+            H_sparse = hessf(xk, h, dynamic)
             diag_H = H_sparse.diagonal() 
             
             # --- MODIFIED NEWTON (Iterative Diagonal Correction) ---

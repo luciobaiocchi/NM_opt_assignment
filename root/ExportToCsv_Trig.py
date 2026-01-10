@@ -1,7 +1,7 @@
 import numpy as np
 import time
 import csv
-from broyden import BroydenProblem
+
 from banded_trig import BandedTrigonometric
 from methods import NewtonMethods
 from utils import analyze_convergence1, plot_convergence
@@ -17,18 +17,8 @@ h_values = [1e-4, 1e-8, 1e-12]
 dynamic_h = [True, False]
 n_list = [2, 1000, 10000, 100000]
 
-
-
-# --- OUTPUT CSV ---
-csv_filename = "./results/results_tn_trig_exact_gradient.csv"
-csv_filename2 = "./results/results_mn_trig_exact_gradient.csv"
-csv_filename3 = "./results/results_tn_trig_all_aprox.csv"
-csv_filename4 = "./results/results_mn_trig_all_aprox.csv"
-csv_filename5 = "./results/results_tn_trig_all_exact.csv"
-csv_filename6 = "./results/results_mn_trig_all_exact.csv"
-
-
-fieldnames = [
+# --- DEFINIZIONE FIELDNAMES ---
+fieldnames_full = [
     "Point ID",
     "n",
     "h",
@@ -41,296 +31,7 @@ fieldnames = [
     "time"
 ]
 
-
-
-print("\n" + "="*100)
-print("==================  START  ==================")
-print(f"=========  {csv_filename}  ==========")
-print("="*100 + "\n")
-
-with open(csv_filename, mode="w", newline="") as f:
-    writer = csv.DictWriter(f, fieldnames=fieldnames)
-    writer.writeheader()
-
-    for h in h_values:
-        for N in n_list:
-            for dynamic in dynamic_h:
-
-                # 5 punti random + punto deterministico x0 = ones
-                x0 = np.ones(N)
-                hypercube_random = np.random.uniform(0, 2, (5, N))
-                hypercube_trig = np.vstack([x0, hypercube_random])
-
-                point = 0
-
-                for x in hypercube_trig:
-
-                    hess_wrapper_mixed = lambda x: BandedTrigonometric.hessian_with_jacobian(
-                    x, h=h, is_h_dynamic=dynamic
-                    )
-                    
-                    # --- AVVIO TIMER ---
-                    start_time_tn = time.perf_counter()
-
-                    xk_tn, fxk_tn, gradxk_norm_tn, k_tn, hist_tn = NewtonMethods.truncated_newton(
-                        x,
-                        BandedTrigonometric.func,
-                        BandedTrigonometric.gradient_exact,
-                        hess_wrapper_mixed,
-                        alpha0=1.0,
-                        kmax=K_MAX,
-                        tolgrad=TOL,
-                        c1=1e-4,
-                        rho=0.5,
-                        btmax=50,
-                        dynamic=dynamic,
-                        h=h
-                    )
-
-                    # --- STOP TIMER ---
-                    execution_time_tn = time.perf_counter() - start_time_tn
-
-                    convergence_rate = analyze_convergence1(hist_tn)
-                    success = (
-                        "yes"
-                        if (gradxk_norm_tn is not None and gradxk_norm_tn <= TOL and k_tn < K_MAX)
-                        else "no"
-                    )
-
-                    # --- SCRITTURA CSV ---
-                    writer.writerow({
-                        "Point ID": point,
-                        "n": N,
-                        "h": f"{h:.5g}",                         # notazione scientifica compatta
-                        "is_dynamic": dynamic,
-                        "success": success,
-                        "k": k_tn,
-                        "grad_norm_final": f"{gradxk_norm_tn:.5g}" if gradxk_norm_tn is not None else "",
-                        "fx_final": f"{fxk_tn:.5g}",
-                        "convergence_rate": f"{convergence_rate:.5g}" if convergence_rate is not None else "",
-                        "time": f"{execution_time_tn:.5g}"
-                    })
-
-                    point+=1
-
-print(f"\nCSV salvato correttamente come: {csv_filename}")
-
-
-
-print("\n" + "="*100)
-print("==================  START  ==================")
-print(f"=========  {csv_filename2}  ==========")
-print("="*100 + "\n")
-
-with open(csv_filename2, mode="w", newline="") as f:
-    writer = csv.DictWriter(f, fieldnames=fieldnames)
-    writer.writeheader()
-
-    for h in h_values:
-        for N in n_list:
-            for dynamic in dynamic_h:
-
-                # 5 punti random + punto deterministico x0 = ones
-                x0 = np.ones(N)
-                hypercube_random = np.random.uniform(0, 2, (5, N))
-                hypercube_trig = np.vstack([x0, hypercube_random])
-
-                point = 0
-
-                for x in hypercube_trig:
-                    # --- AVVIO TIMER ---
-
-                    hess_wrapper_mixed = lambda x: BandedTrigonometric.hessian_with_jacobian(
-                    x, h=h, is_h_dynamic=dynamic
-                    )
-
-                    start_time_mn = time.perf_counter()
-
-                    xk_mn, fxk_mn, gradxk_norm_mn, k_mn, hist_mn = NewtonMethods.modified_newton_trig(
-                        x,
-                        BandedTrigonometric.func,
-                        BandedTrigonometric.gradient_exact,
-                        hess_wrapper_mixed,
-                        alpha0=1.0,
-                        kmax=K_MAX,
-                        tolgrad=TOL,
-                        c1=1e-4,
-                        rho=0.5,
-                        btmax=50,
-                        dynamic=dynamic,
-                        h=h
-                    )
-
-                    # --- STOP TIMER ---
-                    execution_time_mn = time.perf_counter() - start_time_mn
-
-                    convergence_rate = analyze_convergence1(hist_mn)
-                    success = (
-                        "yes"
-                        if (gradxk_norm_mn is not None and gradxk_norm_mn <= TOL and k_mn < K_MAX)
-                        else "no"
-                    )
-
-                    # --- SCRITTURA CSV ---
-                    writer.writerow({
-                        "Point ID": point,
-                        "n": N,
-                        "h": f"{h:.5g}",                         # notazione scientifica compatta
-                        "is_dynamic": dynamic,
-                        "success": success,
-                        "k": k_mn,
-                        "grad_norm_final": f"{gradxk_norm_mn:.5g}" if gradxk_norm_mn is not None else "",
-                        "fx_final": f"{fxk_mn:.5g}",
-                        "convergence_rate": f"{convergence_rate:.5g}" if convergence_rate is not None else "",
-                        "time": f"{execution_time_mn:.5g}"
-                    })
-
-                    point+=1
-
-print(f"\nCSV salvato correttamente come: {csv_filename2}")
-
-
-print("\n" + "="*100)
-print("==================  START  ==================")
-print(f"=========  {csv_filename3}  ==========")
-print("="*100 + "\n")
-
-with open(csv_filename3, mode="w", newline="") as f:
-    writer = csv.DictWriter(f, fieldnames=fieldnames)
-    writer.writeheader()
-
-    for h in h_values:
-        for N in n_list:
-            for dynamic in dynamic_h:
-
-                # 5 punti random + punto deterministico x0 = ones
-                x0 = np.ones(N)
-                hypercube_random = np.random.uniform(0, 2, (5, N))
-                hypercube_trig = np.vstack([x0, hypercube_random])
-
-                point = 0
-
-                for x in hypercube_trig:
-                    # --- AVVIO TIMER ---
-
-                    start_time_tn = time.perf_counter()
-
-                    xk_tn, fxk_tn, gradxk_norm_tn, k_tn, hist_tn = NewtonMethods.truncated_newton(
-                        x,
-                        BandedTrigonometric.func,
-                        BandedTrigonometric.gradient_fd,
-                        BandedTrigonometric.hessian_fd,
-                        alpha0=1.0,
-                        kmax=K_MAX,
-                        tolgrad=TOL,
-                        c1=1e-4,
-                        rho=0.5,
-                        btmax=50,
-                        dynamic=dynamic,
-                        h=h
-                    )
-
-                    # --- STOP TIMER ---
-                    execution_time_tn = time.perf_counter() - start_time_tn
-
-                    convergence_rate = analyze_convergence1(hist_tn)
-                    success = (
-                        "yes"
-                        if (gradxk_norm_tn is not None and gradxk_norm_tn <= TOL and k_tn < K_MAX)
-                        else "no"
-                    )
-
-                    # --- SCRITTURA CSV ---
-                    writer.writerow({
-                        "Point ID": point,
-                        "n": N,
-                        "h": f"{h:.5g}",                         # notazione scientifica compatta
-                        "is_dynamic": dynamic,
-                        "success": success,
-                        "k": k_tn,
-                        "grad_norm_final": f"{gradxk_norm_tn:.5g}" if gradxk_norm_tn is not None else "",
-                        "fx_final": f"{fxk_tn:.5g}",
-                        "convergence_rate": f"{convergence_rate:.5g}" if convergence_rate is not None else "",
-                        "time": f"{execution_time_tn:.5g}"
-                    })
-
-                    point+=1
-
-print(f"\nCSV salvato correttamente come: {csv_filename3}")
-
-
-
-print("\n" + "="*100)
-print("==================  START  ==================")
-print(f"=========  {csv_filename4}  ==========")
-print("="*100 + "\n")
-
-with open(csv_filename4, mode="w", newline="") as f:
-    writer = csv.DictWriter(f, fieldnames=fieldnames)
-    writer.writeheader()
-
-    for h in h_values:
-        for N in n_list:
-            for dynamic in dynamic_h:
-
-                # 5 punti random + punto deterministico x0 = ones
-                x0 = np.ones(N)
-                hypercube_random = np.random.uniform(0, 2, (5, N))
-                hypercube_trig = np.vstack([x0, hypercube_random])
-
-                point = 0
-
-                for x in hypercube_trig:
-                    # --- AVVIO TIMER ---
-    
-                    start_time_mn = time.perf_counter()
-
-                    xk_mn, fxk_mn, gradxk_norm_mn, k_mn, hist_mn = NewtonMethods.modified_newton_trig(
-                        x,
-                        BandedTrigonometric.func,
-                        BandedTrigonometric.gradient_fd,
-                        BandedTrigonometric.hessian_fd,
-                        alpha0=1.0,
-                        kmax=K_MAX,
-                        tolgrad=TOL,
-                        c1=1e-4,
-                        rho=0.5,
-                        btmax=50,
-                        dynamic=dynamic,
-                        h=h
-                    )
-
-                    # --- STOP TIMER ---
-                    execution_time_mn = time.perf_counter() - start_time_mn
-
-                    convergence_rate = analyze_convergence1(hist_mn)
-                    success = (
-                        "yes"
-                        if (gradxk_norm_mn is not None and gradxk_norm_mn <= TOL and k_mn < K_MAX)
-                        else "no"
-                    )
-
-                    # --- SCRITTURA CSV ---
-                    writer.writerow({
-                        "Point ID": point,
-                        "n": N,
-                        "h": f"{h:.5g}",                         # notazione scientifica compatta
-                        "is_dynamic": dynamic,
-                        "success": success,
-                        "k": k_mn,
-                        "grad_norm_final": f"{gradxk_norm_mn:.5g}" if gradxk_norm_mn is not None else "",
-                        "fx_final": f"{fxk_mn:.5g}",
-                        "convergence_rate": f"{convergence_rate:.5g}" if convergence_rate is not None else "",
-                        "time": f"{execution_time_mn:.5g}"
-                    })
-
-                    point+=1
-
-print(f"\nCSV salvato correttamente come: {csv_filename4}")
-
-
-
-fieldnames2 = [
+fieldnames_simple = [
     "Point ID",
     "n",
     "success",
@@ -341,117 +42,145 @@ fieldnames2 = [
     "time"
 ]
 
+def process_batch(writer, method, gradient_fn, hessian_fn, N, h, dynamic, include_params):
+    # 5 punti random + punto deterministico x0 = ones
+    x0 = np.ones(N)
+    hypercube_random = np.random.uniform(0, 2, (5, N))
+    hypercube_trig = np.vstack([x0, hypercube_random])
 
-print("\n" + "="*100)
-print("==================  START  ==================")
-print(f"=========  {csv_filename5}  ==========")
-print("="*100 + "\n")
+    point_id = 0
+    for x in hypercube_trig:
+        # --- AVVIO TIMER ---
+        start_time = time.perf_counter()
 
-with open(csv_filename5, mode="w", newline="") as f:
-    writer = csv.DictWriter(f, fieldnames=fieldnames2)
-    writer.writeheader()
+        xk, fxk, gradxk_norm, k, hist = method(
+            x,
+            BandedTrigonometric.func,
+            gradient_fn,
+            hessian_fn,
+            alpha0=1.0,
+            kmax=K_MAX,
+            tolgrad=TOL,
+            c1=1e-4,
+            rho=0.5,
+            btmax=50,
+            dynamic=dynamic,
+            h=h
+        )
 
-    for N in n_list:
-        # 5 punti random + punto deterministico x0 = ones
-        x0 = np.ones(N)
-        hypercube_random = np.random.uniform(0, 2, (5, N))
-        hypercube_trig = np.vstack([x0, hypercube_random])
-        point = 0
-        for x in hypercube_trig:
-            # --- AVVIO TIMER ---
-            start_time_tn = time.perf_counter()
-            xk_tn, fxk_tn, gradxk_norm_tn, k_tn, hist_tn = NewtonMethods.truncated_newton(
-                x,
-                BandedTrigonometric.func,
-                BandedTrigonometric.gradient_exact,
-                BandedTrigonometric.hessian_exact,
-                alpha0=1.0,
-                kmax=K_MAX,
-                tolgrad=TOL,
-                c1=1e-4,
-                rho=0.5,
-                btmax=50,
-                dynamic=None,
-                h=None
-            )
-            # --- STOP TIMER ---
-            execution_time_tn = time.perf_counter() - start_time_tn
-            convergence_rate = analyze_convergence1(hist_tn)
-            success = (
-                "yes"
-                if (gradxk_norm_tn is not None and gradxk_norm_tn <= TOL and k_tn < K_MAX)
-                else "no"
-            )
-            # --- SCRITTURA CSV ---
-            writer.writerow({
-                "Point ID": point,
-                "n": N,
-                "success": success,
-                "k": k_tn,
-                "grad_norm_final": f"{gradxk_norm_tn:.5g}" if gradxk_norm_tn is not None else "",
-                "fx_final": f"{fxk_tn:.5g}",
-                "convergence_rate": f"{convergence_rate:.5g}" if convergence_rate is not None else "",
-                "time": f"{execution_time_tn:.5g}"
-            })
-            point+=1
+        # --- STOP TIMER ---
+        execution_time = time.perf_counter() - start_time
+        convergence_rate = analyze_convergence1(hist)
+        
+        success = (
+            "yes"
+            if (gradxk_norm is not None and gradxk_norm <= TOL and k < K_MAX)
+            else "no"
+        )
+        
+        row = {
+            "Point ID": point_id,
+            "n": N,
+            "success": success,
+            "k": k,
+            "grad_norm_final": f"{gradxk_norm:.5g}" if gradxk_norm is not None else "",
+            "fx_final": f"{fxk:.5g}",
+            "convergence_rate": f"{convergence_rate:.5g}" if convergence_rate is not None else "",
+            "time": f"{execution_time:.5g}"
+        }
 
-print(f"\nCSV salvato correttamente come: {csv_filename5}")
+        if include_params:
+            row["h"] = f"{h:.5g}"
+            row["is_dynamic"] = dynamic
+
+        writer.writerow(row)
+        point_id += 1
+
+def run_experiment(log, filename, method, gradient_fn, hessian_fn, fieldnames, use_h_dynamic_loops=True):
+    print("\n" + "="*100)
+    print(f"=========  {filename}  ==========")
+    print(f"=========  {log}  ==========")
+    print("="*100 + "\n")
+
+    with open(filename, mode="w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+
+        if use_h_dynamic_loops:
+            for h in h_values:
+                for N in n_list:
+                    for dynamic in dynamic_h:
+                        print('\n')
+                        print(f"==================  {h, N, dynamic}  ==================")
+                        print('\n')
+                        process_batch(writer, method, gradient_fn, hessian_fn, N, h, dynamic, True)
+        else:
+            for N in n_list:
+                process_batch(writer, method, gradient_fn, hessian_fn, N, None, None, False)
+
+    print(f"\nCSV salvato correttamente come: {filename}")
 
 
+# --- ESECUZIONE ---
 
+# 1. TN, Exact Gradient, Hessian with Jacobian
+run_experiment(
+    " 1. TN, Exact Gradient, Hessian with Jacobian",
+    "./results/results_tn_trig_exact_gradient.csv",
+    NewtonMethods.truncated_newton,
+    BandedTrigonometric.gradient_exact, 
+    BandedTrigonometric.hessian_with_jacobian,
+    fieldnames_full
+)
 
-print("\n" + "="*100)
-print("==================  START  ==================")
-print(f"=========  {csv_filename6}  ==========")
-print("="*100 + "\n")
+# 2. MN, Exact Gradient, Hessian with Jacobian
+run_experiment(
+    "2. MN, Exact Gradient, Hessian with Jacobian",
+    "./results/results_mn_trig_exact_gradient.csv",
+    NewtonMethods.modified_newton_trig,
+    BandedTrigonometric.gradient_exact,
+    BandedTrigonometric.hessian_with_jacobian,
+    fieldnames_full
+)
 
-with open(csv_filename6, mode="w", newline="") as f:
-    writer = csv.DictWriter(f, fieldnames=fieldnames2)
-    writer.writeheader()
+# 3. TN, All Approx (FD)
+run_experiment(
+    "3. TN, All Approx (FD)",
+    "./results/results_tn_trig_all_aprox.csv",
+    NewtonMethods.truncated_newton,
+    BandedTrigonometric.gradient_fd,
+    BandedTrigonometric.hessian_fd,
+    fieldnames_full
+)
 
-    for N in n_list:
-        # 5 punti random + punto deterministico x0 = ones
-        x0 = np.ones(N)
-        hypercube_random = np.random.uniform(0, 2, (5, N))
-        hypercube_trig = np.vstack([x0, hypercube_random])
-        point = 0
-        for x in hypercube_trig:
-            # --- AVVIO TIMER ---
-            start_time_mn = time.perf_counter()
-            xk_mn, fxk_mn, gradxk_norm_mn, k_mn, hist_mn = NewtonMethods.modified_newton_trig(
-                x,
-                BandedTrigonometric.func,
-                BandedTrigonometric.gradient_exact,
-                BandedTrigonometric.hessian_exact,
-                alpha0=1.0,
-                kmax=K_MAX,
-                tolgrad=TOL,
-                c1=1e-4,
-                rho=0.5,
-                btmax=50,
-                dynamic=None,
-                h=None
-            )
-            # --- STOP TIMER ---
-            execution_time_mn = time.perf_counter() - start_time_mn
-            convergence_rate = analyze_convergence1(hist_mn)
-            success = (
-                "yes"
-                if (gradxk_norm_mn is not None and gradxk_norm_mn <= TOL and k_mn < K_MAX)
-                else "no"
-            )
-            # --- SCRITTURA CSV ---
-            writer.writerow({
-                "Point ID": point,
-                "n": N,
-                "success": success,
-                "k": k_mn,
-                "grad_norm_final": f"{gradxk_norm_mn:.5g}" if gradxk_norm_mn is not None else "",
-                "fx_final": f"{fxk_mn:.5g}",
-                "convergence_rate": f"{convergence_rate:.5g}" if convergence_rate is not None else "",
-                "time": f"{execution_time_mn:.5g}"
-            })
-            point+=1
+# 4. MN, All Approx (FD)
+run_experiment(
+    "4. MN, All Approx (FD)",
+    "./results/results_mn_trig_all_aprox.csv",
+    NewtonMethods.modified_newton_trig,
+    BandedTrigonometric.gradient_fd,
+    BandedTrigonometric.hessian_fd,
+    fieldnames_full
+)
 
-print(f"\nCSV salvato correttamente come: {csv_filename6}")
+# 5. TN, All Exact, No h/dynamic loops
+run_experiment(
+    "5. TN, All Exact, No h/dynamic loops",
+    "./results/results_tn_trig_all_exact.csv",
+    NewtonMethods.truncated_newton,
+    BandedTrigonometric.gradient_exact,
+    BandedTrigonometric.hessian_exact,
+    fieldnames_simple,
+    use_h_dynamic_loops=False
+)
 
+# 6. MN, All Exact, No h/dynamic loops
+run_experiment(
+    "6. MN, All Exact, No h/dynamic loops",
+    "./results/results_mn_trig_all_exact.csv",
+    NewtonMethods.modified_newton_trig,
+    BandedTrigonometric.gradient_exact,
+    BandedTrigonometric.hessian_exact,
+    fieldnames_simple,
+    use_h_dynamic_loops=False
+)

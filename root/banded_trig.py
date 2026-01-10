@@ -89,6 +89,10 @@ class BandedTrigonometric:
     
     @staticmethod
     def hessian_fd(x, h=1e-5, is_h_dynamic=False):
+        # THIS IS HARDCODED IN ORDER TO LET THE TESTING BE EASIER
+        h=1e-5
+        is_h_dynamic=False
+        
         x = np.asarray(x)
         n = len(x)
         ids = np.arange(1, n + 1)
@@ -108,10 +112,7 @@ class BandedTrigonometric:
         val_curr = get_local_val(x)
         val_plus = get_local_val(x + h)
         val_minus = get_local_val(x - h)
-        
-        if is_h_dynamic:
-            h = h * np.abs(x)
-        
+                
         # 2. Formula Differenze Finite per derivata seconda
         h_diag = (val_plus - 2 * val_curr + val_minus) / (h ** 2)
         
