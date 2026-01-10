@@ -1,12 +1,12 @@
 import numpy as np
 import numpy.linalg as npl
 import scipy.linalg as spla
+import scipy.sparse
 from utils import backtracking_line_search
-
 class NewtonMethods:
     
     @staticmethod
-    def modified_newton_bro(x0, f, gradf, hessf, alpha0=1.0, kmax=100, tolgrad=1e-5, c1=1e-4, rho=0.5, btmax=20, dynamic=False, h=1e-5):
+    def modified_newton_bro(x0, f, gradf, hessf, alpha0=1.0, kmax=100, tolgrad=1e-5, c1=1e-4, rho=0.5, btmax=20, dynamic=False, h=1e-5, verbose=False):
         '''
             Solves an unconstrained optimization problem using the Modified Newton method, 
             exploiting the banded structure of the Hessian matrix.
@@ -42,8 +42,8 @@ class NewtonMethods:
         fx = f(xk)
 
         history.append({'k': 0, 'x': xk.copy(), 'fx': fx, 'gnorm': gradfk_norm})
-        
-        #print(f"--------- START: Modified Newton with BANDED Cholesky. N={n} ---------")
+        if verbose:
+            print(f"--------- START: Modified Newton with BANDED Cholesky. N={n} ---------")
         
         while k < kmax and gradfk_norm > tolgrad:
             H_sparse = hessf(xk)
@@ -85,8 +85,8 @@ class NewtonMethods:
                     pk = spla.cho_solve_banded((c, True), -grad_xk)
                     
                     # If tau was high, print for debug
-                    if tau > 0:
-                        print(f"  > Matrix corrected with tau={tau:.4e}")
+                    #if tau > 0:
+                    #    print(f"  > Matrix corrected with tau={tau:.4e}")
                     break 
 
                 except np.linalg.LinAlgError:
@@ -99,7 +99,7 @@ class NewtonMethods:
                     # Safety check to avoid infinite loops
                     if tau > 1e10:
                         pk = -grad_xk # Fallback to gradient
-                        print("  ! Fallback to gradient (Ill-conditioned Hessian)")
+                        #print("  ! Fallback to gradient (Ill-conditioned Hessian)")
                         break
 
             # 3. Backtracking Line Search
@@ -115,13 +115,14 @@ class NewtonMethods:
             k += 1
             #history.append((k, fx, gradfk_norm))
             history.append({'k': k, 'x': xk.copy(), 'fx': fx, 'gnorm': gradfk_norm})
-            if k % 10 == 0: # Print less frequently for cleanliness
-                print(f"Iter: {k} | f(x): {fx:.4e} | ||g||: {gradfk_norm:.4e}")
-
+            #if k % 10 == 0: # Print less frequently for cleanliness
+            #    print(f"Iter: {k} | f(x): {fx:.4e} | ||g||: {gradfk_norm:.4e}")
+        if verbose:
+            print(f"Convergence reached at iteration {k}")
         return xk, fx, gradfk_norm, k, history
     
     @staticmethod
-    def modified_newton_trig(x0, f, gradf, hessf, alpha0=1.0, kmax=100, tolgrad=1e-5, c1=1e-4, rho=0.5, btmax=20, dynamic=False, h=1e-5):
+    def modified_newton_trig(x0, f, gradf, hessf, alpha0=1.0, kmax=100, tolgrad=1e-5, c1=1e-4, rho=0.5, btmax=20, dynamic=False, h=1e-5, verbose=False):
         '''
         Solves an unconstrained optimization problem assuming a DIAGONAL Hessian structure.
         Aligned with the logic of modified_newton_bro (iterative tau update).
@@ -140,8 +141,8 @@ class NewtonMethods:
         fx = f(xk)
 
         history.append({'k': 0, 'x': xk.copy(), 'fx': fx, 'gnorm': gradfk_norm})
-        
-        #print(f"--------- START: Modified Newton DIAGONAL (Trigonometric). N={n} ---------")
+        if verbose:
+            print(f"--------- START: Modified Newton DIAGONAL (Trigonometric). N={n} ---------")
         
         while k < kmax and gradfk_norm > tolgrad:
             # 1. Sparse Hessian Computation
@@ -186,7 +187,7 @@ class NewtonMethods:
                     # SAFEGUARD: If tau explodes, exit to avoid infinite loops
                     if tau > 1e10:
                         pk = -grad_xk # Fallback to pure Gradient Descent
-                        print(f"  ! Fallback to gradient (Ill-conditioned Hessian) at step {k}")
+                        #print(f"  ! Fallback to gradient (Ill-conditioned Hessian) at step {k}")
                         break
 
             # 3. Backtracking Line Search
@@ -203,13 +204,14 @@ class NewtonMethods:
             k += 1
             history.append({'k': k, 'x': xk.copy(), 'fx': fx, 'gnorm': gradfk_norm})
             
-            if k % 10 == 0:
-                print(f"Iter: {k} | f(x): {fx:.4e} | ||g||: {gradfk_norm:.4e}")
-
+            #if k % 10 == 0 and verbose:
+                #print(f"Iter: {k} | f(x): {fx:.4e} | ||g||: {gradfk_norm:.4e}")
+        if verbose:
+                print(f"Convergence reached at iteration {k}")
         return xk, fx, gradfk_norm, k, history
 
     @staticmethod
-    def truncated_newton(x0, f, gradf, hessf, alpha0, kmax, tolgrad, c1, rho, btmax, dynamic=False, h=1e-5):
+    def truncated_newton(x0, f, gradf, hessf, alpha0, kmax, tolgrad, c1, rho, btmax, dynamic=False, h=1e-5, verbose=False):
         xk = x0.copy()
         n = len(x0)
         history = []
@@ -219,15 +221,18 @@ class NewtonMethods:
         gradk = gradf(xk, h, is_h_dynamic=dynamic)
         grad_norm = npl.norm(gradk)
         history.append({'k': 0, 'x': xk.copy(), 'fx': fx, 'gnorm': grad_norm})
-
-        print(f"--------- START: Newton Truncated. N={n} ---------")
+        
+        if verbose:
+            print(f"--------- START: Newton Truncated. N={n} ---------")
+            
         for k in range(kmax):
             gradk = gradf(xk, h, is_h_dynamic=dynamic)
             grad_norm = npl.norm(gradk)
             
             # Check convergence
             if grad_norm < tolgrad:
-                print(f"Convergence reached at iteration {k}")
+                if verbose:
+                    print(f"Convergence reached at iteration {k}")
                 return xk, f(xk), grad_norm, k, history
             
             B = hessf(xk)

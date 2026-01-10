@@ -1,7 +1,7 @@
 import numpy as np
 import time
 import csv
-
+from multiprocessing import Process
 from banded_trig import BandedTrigonometric
 from methods import NewtonMethods
 from utils import analyze_convergence1, plot_convergence
@@ -10,6 +10,7 @@ from utils import analyze_convergence1, plot_convergence
 K_MAX = 200
 TOL = 1e-4
 SEED = 358616
+verbose=False
 
 np.random.seed(SEED)
 
@@ -49,6 +50,7 @@ def process_batch(writer, method, gradient_fn, hessian_fn, N, h, dynamic, includ
     hypercube_trig = np.vstack([x0, hypercube_random])
 
     point_id = 0
+    success_count = 0
     for x in hypercube_trig:
         # --- AVVIO TIMER ---
         start_time = time.perf_counter()
@@ -65,7 +67,8 @@ def process_batch(writer, method, gradient_fn, hessian_fn, N, h, dynamic, includ
             rho=0.5,
             btmax=50,
             dynamic=dynamic,
-            h=h
+            h=h,
+            verbose=verbose
         )
 
         # --- STOP TIMER ---
@@ -77,6 +80,8 @@ def process_batch(writer, method, gradient_fn, hessian_fn, N, h, dynamic, includ
             if (gradxk_norm is not None and gradxk_norm <= TOL and k < K_MAX)
             else "no"
         )
+        if success == "yes":
+            success_count += 1
         
         row = {
             "Point ID": point_id,
@@ -95,92 +100,131 @@ def process_batch(writer, method, gradient_fn, hessian_fn, N, h, dynamic, includ
 
         writer.writerow(row)
         point_id += 1
+    
+    return success_count, point_id
 
 def run_experiment(log, filename, method, gradient_fn, hessian_fn, fieldnames, use_h_dynamic_loops=True):
-    print("\n" + "="*100)
-    print(f"=========  {filename}  ==========")
-    print(f"=========  {log}  ==========")
-    print("="*100 + "\n")
+    if verbose:
+        print("\n" + "="*100)
+        print(f"=========  {log}  ==========")
+        print("="*100 + "\n")
 
     with open(filename, mode="w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
 
+        total_successes = 0
+        total_attempts = 0
         if use_h_dynamic_loops:
             for h in h_values:
                 for N in n_list:
                     for dynamic in dynamic_h:
-                        print('\n')
-                        print(f"==================  {h, N, dynamic}  ==================")
-                        print('\n')
-                        process_batch(writer, method, gradient_fn, hessian_fn, N, h, dynamic, True)
+                        if verbose:
+                            print('\n')
+                            print(f"==================  {h, N, dynamic}  ==================")
+                            print('\n')
+                        s, t = process_batch(writer, method, gradient_fn, hessian_fn, N, h, dynamic, True)
+                        total_successes += s
+                        total_attempts += t
         else:
             for N in n_list:
-                process_batch(writer, method, gradient_fn, hessian_fn, N, None, None, False)
-
-    print(f"\nCSV salvato correttamente come: {filename}")
+                s, t = process_batch(writer, method, gradient_fn, hessian_fn, N, None, None, False)
+                total_successes += s
+                total_attempts += t
+    #if verbose:
+    print(f"\n=========  {log}  ==========")
+    print(f"Experiment finished. Total successes: {total_successes}/{total_attempts}")
+    print(f"CSV salvato correttamente come: {filename}\n")
 
 
 # --- ESECUZIONE ---
 
-# 1. TN, Exact Gradient, Hessian with Jacobian
-run_experiment(
-    " 1. TN, Exact Gradient, Hessian with Jacobian",
-    "./results/results_tn_trig_exact_gradient.csv",
-    NewtonMethods.truncated_newton,
-    BandedTrigonometric.gradient_exact, 
-    BandedTrigonometric.hessian_with_jacobian,
-    fieldnames_full
-)
+if __name__ == "__main__":
+    start_total = time.time()
+    processes = []
 
-# 2. MN, Exact Gradient, Hessian with Jacobian
-run_experiment(
-    "2. MN, Exact Gradient, Hessian with Jacobian",
-    "./results/results_mn_trig_exact_gradient.csv",
-    NewtonMethods.modified_newton_trig,
-    BandedTrigonometric.gradient_exact,
-    BandedTrigonometric.hessian_with_jacobian,
-    fieldnames_full
-)
+    # 1. TN, Exact Gradient, Hessian with Jacobian
+    p1 = Process(target=run_experiment, args=(
+        " 1. TN, Exact Gradient, Hessian with Jacobian",
+        "./results/results_tn_trig_exact_gradient.csv",
+        NewtonMethods.truncated_newton,
+        BandedTrigonometric.gradient_exact, 
+        BandedTrigonometric.hessian_with_jacobian,
+        fieldnames_full
+    ))
+    processes.append(p1)
 
-# 3. TN, All Approx (FD)
-run_experiment(
-    "3. TN, All Approx (FD)",
-    "./results/results_tn_trig_all_aprox.csv",
-    NewtonMethods.truncated_newton,
-    BandedTrigonometric.gradient_fd,
-    BandedTrigonometric.hessian_fd,
-    fieldnames_full
-)
+    # 2. MN, Exact Gradient, Hessian with Jacobian
+    p2 = Process(target=run_experiment, args=(
+        "2. MN, Exact Gradient, Hessian with Jacobian",
+        "./results/results_mn_trig_exact_gradient.csv",
+        NewtonMethods.modified_newton_trig,
+        BandedTrigonometric.gradient_exact,
+        BandedTrigonometric.hessian_with_jacobian,
+        fieldnames_full
+    ))
+    processes.append(p2)
 
-# 4. MN, All Approx (FD)
-run_experiment(
-    "4. MN, All Approx (FD)",
-    "./results/results_mn_trig_all_aprox.csv",
-    NewtonMethods.modified_newton_trig,
-    BandedTrigonometric.gradient_fd,
-    BandedTrigonometric.hessian_fd,
-    fieldnames_full
-)
+    # 3. TN, All Approx (FD)
+    p3 = Process(target=run_experiment, args=(
+        "3. TN, All Approx (FD)",
+        "./results/results_tn_trig_all_aprox.csv",
+        NewtonMethods.truncated_newton,
+        BandedTrigonometric.gradient_fd,
+        BandedTrigonometric.hessian_fd,
+        fieldnames_full
+    ))
+    processes.append(p3)
 
-# 5. TN, All Exact, No h/dynamic loops
-run_experiment(
-    "5. TN, All Exact, No h/dynamic loops",
-    "./results/results_tn_trig_all_exact.csv",
-    NewtonMethods.truncated_newton,
-    BandedTrigonometric.gradient_exact,
-    BandedTrigonometric.hessian_exact,
-    fieldnames_simple,
-    use_h_dynamic_loops=False
-)
+    # 4. MN, All Approx (FD)
+    p4 = Process(target=run_experiment, args=(
+        "4. MN, All Approx (FD)",
+        "./results/results_mn_trig_all_aprox.csv",
+        NewtonMethods.modified_newton_trig,
+        BandedTrigonometric.gradient_fd,
+        BandedTrigonometric.hessian_fd,
+        fieldnames_full
+    ))
+    processes.append(p4)
 
-# 6. MN, All Exact, No h/dynamic loops
-run_experiment(
-    "6. MN, All Exact, No h/dynamic loops",
-    "./results/results_mn_trig_all_exact.csv",
-    NewtonMethods.modified_newton_trig,
-    BandedTrigonometric.gradient_exact,
-    BandedTrigonometric.hessian_exact,
-    fieldnames_simple,
-    use_h_dynamic_loops=False
-)
+    # 5. TN, All Exact, No h/dynamic loops
+    p5 = Process(target=run_experiment, args=(
+        "5. TN, All Exact, No h/dynamic loops",
+        "./results/results_tn_trig_all_exact.csv",
+        NewtonMethods.truncated_newton,
+        BandedTrigonometric.gradient_exact,
+        BandedTrigonometric.hessian_exact,
+        fieldnames_simple,
+        False
+    ))
+    processes.append(p5)
+
+    # 6. MN, All Exact, No h/dynamic loops
+    p6 = Process(target=run_experiment, args=(
+        "6. MN, All Exact, No h/dynamic loops",
+        "./results/results_mn_trig_all_exact.csv",
+        NewtonMethods.modified_newton_trig,
+        BandedTrigonometric.gradient_exact,
+        BandedTrigonometric.hessian_exact,
+        fieldnames_simple,
+        False
+    ))
+    processes.append(p6)
+
+    # Start all processes
+    print(f"Starting {len(processes)} experiments in parallel...")
+    
+    '''
+    '''
+    for p in processes:
+        p.start()
+    # Wait for all processes to complete
+    for p in processes:
+       p.join()
+    
+    #p3.start()
+    #p3.join()
+    
+
+    end_total = time.time()
+    print(f"\nAll experiments completed in {end_total - start_total:.2f} seconds.")

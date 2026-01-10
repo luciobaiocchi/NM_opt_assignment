@@ -10,6 +10,7 @@ from utils import analyze_convergence1, plot_convergence
 K_MAX = 200
 TOL = 1e-6
 SEED = 358616
+verbose=False
 
 np.random.seed(SEED)
 
@@ -49,6 +50,7 @@ def process_batch(writer, method, gradient_fn, hessian_fn, N, h, dynamic, includ
     hypercube_bro = np.vstack([x0, hypercube_random])
 
     point_id = 0
+    success_count = 0
     for x in hypercube_bro:
         # --- AVVIO TIMER ---
         start_time = time.perf_counter()
@@ -65,7 +67,8 @@ def process_batch(writer, method, gradient_fn, hessian_fn, N, h, dynamic, includ
             rho=0.5,
             btmax=50,
             dynamic=dynamic,
-            h=h
+            h=h,
+            verbose=verbose
         )
 
         # --- STOP TIMER ---
@@ -81,6 +84,8 @@ def process_batch(writer, method, gradient_fn, hessian_fn, N, h, dynamic, includ
             if (gradxk_norm is not None and gradxk_norm <= TOL and k < K_MAX)
             else "no"
         )
+        if success == "yes":
+            success_count += 1
         
         row = {
             "Point ID": point_id,
@@ -96,38 +101,50 @@ def process_batch(writer, method, gradient_fn, hessian_fn, N, h, dynamic, includ
         if include_params:
             row["h"] = f"{h:.5g}"
             row["is_dynamic"] = dynamic
-
+    
         writer.writerow(row)
         point_id += 1
+    
+    return success_count, point_id
 
 def run_experiment(log, filename, method, gradient_fn, hessian_fn, fieldnames, use_h_dynamic_loops=True, convergence_tail=None):
-    print("\n" + "="*100)
-    print(f"=========  {filename}  ==========")
-    print(f"=========  {log}  ==========")
-    print("="*100 + "\n")
+    if verbose:
+        print("\n" + "="*100)
+        print(f"=========  {filename}  ==========")
+        print(f"=========  {log}  ==========")
+        print("="*100 + "\n")
 
     with open(filename, mode="w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fieldnames)
         writer.writeheader()
 
+        total_successes = 0
+        total_attempts = 0
         if use_h_dynamic_loops:
             for h in h_values:
                 for N in n_list:
                     for dynamic in dynamic_h:
-                        print('\n')
-                        print(f"==================  {h, N, dynamic}  ==================")
-                        print('\n')
-                        process_batch(writer, method, gradient_fn, hessian_fn, N, h, dynamic, True, convergence_tail)
+                        if verbose:
+                            print('\n')
+                            print(f"==================  {h, N, dynamic}  ==================")
+                            print('\n')
+                        s, t = process_batch(writer, method, gradient_fn, hessian_fn, N, h, dynamic, True, convergence_tail)
+                        total_successes += s
+                        total_attempts += t
         else:
             for N in n_list:
-                process_batch(writer, method, gradient_fn, hessian_fn, N, None, None, False, convergence_tail)
+                s, t = process_batch(writer, method, gradient_fn, hessian_fn, N, None, None, False, convergence_tail)
+                total_successes += s
+                total_attempts += t
 
-    print(f"\nCSV salvato correttamente come: {filename}")
+    print(f"\nExperiment finished. Total successes: {total_successes}/{total_attempts}")
+    print(f"CSV salvato correttamente come: {filename}")
 
 
 # --- ESECUZIONE ---
 
 if __name__ == "__main__":
+    start_total = time.time()
     processes = []
 
     # 1. TN, Exact Gradient, Hessian with Jacobian
@@ -209,4 +226,5 @@ if __name__ == "__main__":
     for p in processes:
         p.join()
 
-    print("\nAll experiments completed.")
+    end_total = time.time()
+    print(f"\nAll experiments completed in {end_total - start_total:.2f} seconds.")
