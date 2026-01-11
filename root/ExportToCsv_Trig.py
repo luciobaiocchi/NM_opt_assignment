@@ -10,7 +10,7 @@ from utils import analyze_convergence1, plot_convergence
 K_MAX = 200
 TOL = 1e-4
 SEED = 358616
-verbose=False
+verbose=True
 
 np.random.seed(SEED)
 
@@ -46,7 +46,9 @@ fieldnames_simple = [
 def process_batch(writer, method, gradient_fn, hessian_fn, N, h, dynamic, include_params):
     # 5 punti random + punto deterministico x0 = ones
     x0 = np.ones(N)
-    hypercube_random = np.random.uniform(0, 2, (5, N))
+
+    rng = np.random.default_rng(SEED) # FOR PROCESSING IN PARALLEL
+    hypercube_random = rng.uniform(0, 2, (5, N))
     hypercube_trig = np.vstack([x0, hypercube_random])
 
     point_id = 0
@@ -215,15 +217,15 @@ if __name__ == "__main__":
     print(f"Starting {len(processes)} experiments in parallel...")
     
     '''
-    '''
     for p in processes:
         p.start()
     # Wait for all processes to complete
     for p in processes:
        p.join()
+    '''
     
-    #p3.start()
-    #p3.join()
+    p1.start()
+    p1.join()
     
 
     end_total = time.time()

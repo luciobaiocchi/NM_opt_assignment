@@ -7,7 +7,7 @@ from methods import NewtonMethods
 from utils import analyze_convergence1, plot_convergence
 
 # --- CONFIGURAZIONE ---
-K_MAX = 200
+K_MAX = 500
 TOL = 1e-6
 SEED = 358616
 verbose=False
@@ -46,7 +46,9 @@ fieldnames_simple = [
 def process_batch(writer, method, gradient_fn, hessian_fn, N, h, dynamic, include_params, convergence_tail=None):
     # 5 punti random + punto deterministico x0 = -ones
     x0 = -np.ones(N)
-    hypercube_random = np.random.uniform(-2, 0, (5, N))
+    
+    rng = np.random.default_rng(SEED) # FOR PROCESSING IN PARALLEL
+    hypercube_random = rng.uniform(-2, 0, (5, N))
     hypercube_bro = np.vstack([x0, hypercube_random])
 
     point_id = 0
