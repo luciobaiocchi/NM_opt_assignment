@@ -144,32 +144,32 @@ def run_combined_analysis():
     np.random.seed(SEED)
     N = 2
     K_MAX = 200
-    TOL = 1e-4
-    Problem = BandedTrigonometric
+    TOL = 1e-6
+    Problem = BroydenProblem
     Method = NewtonMethods.truncated_newton
     start_points = []
     
     #BRO 
-    #bounds_x = (-2.5, 0.5)
-    #bounds_y = (-2.5, 0.5)
+    bounds_x = (-2.5, 0.5)
+    bounds_y = (-2.5, 0.5)
     #OUTPUT_DIR = "plots_output/bro/mn"
-    #OUTPUT_DIR = "plots_output/bro/tc"
-    #start_points.append( ("Suggested", -np.ones(N)) )
-    #rand_pts = np.random.uniform(-2, 0, (5, N))
-    #for i, pt in enumerate(rand_pts):
-    #    start_points.append( (f"Rnd{i+1}", pt) )
+    OUTPUT_DIR = "plots_output/bro/tc"
+    start_points.append( ("Suggested", -np.ones(N)) )
+    rand_pts = np.random.uniform(-2, 0, (5, N))
+    for i, pt in enumerate(rand_pts):
+        start_points.append( (f"Rnd{i+1}", pt) )
     
     #TRI
     #bounds_x = (-3.5, 2)
     #bounds_y = (-2, 2.5)
-    bounds_x = (-10, 5)
-    bounds_y = (-10, 5)
+    #bounds_x = (-10, 5)
+    #bounds_y = (-10, 5)
     #OUTPUT_DIR = "plots_output/tri/mn"
-    OUTPUT_DIR = "plots_output/tri/tc"
-    start_points.append( ("Suggested", np.ones(N)) )
-    rand_pts = np.random.uniform(0, 2, (5, N))
-    for i, pt in enumerate(rand_pts):
-        start_points.append( (f"Rnd{i+1}", pt) )
+    #OUTPUT_DIR = "plots_output/tri/tc"
+    #start_points.append( ("Suggested", np.ones(N)) )
+    #rand_pts = np.random.uniform(0, 2, (5, N))
+    #for i, pt in enumerate(rand_pts):
+    #    start_points.append( (f"Rnd{i+1}", pt) )
 
 
     if not os.path.exists(OUTPUT_DIR):
@@ -210,9 +210,8 @@ def run_combined_analysis():
             
             for lbl, x0 in start_points:
                 # A. MIXED
-                hess_wrapper = lambda x: Problem.hessian_with_jacobian(x, h=h_val, is_h_dynamic=is_dyn)
                 _, _, _, _, h_m = Method(
-                    x0, Problem.func, Problem.gradient_exact, hess_wrapper,
+                    x0, Problem.func, Problem.gradient_exact, Problem.hessian_with_jacobian,
                     alpha0=1.0, kmax=K_MAX, tolgrad=TOL, c1=1e-4, rho=0.5, btmax=50,
                     dynamic=is_dyn, h=h_val
                 )
