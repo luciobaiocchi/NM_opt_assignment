@@ -151,7 +151,7 @@ def run_summary_analysis():
         # Generazione Punti
         start_points = []
         start_points.append(("Suggested", np.ones(N)))
-        rand_pts = np.random.uniform(0, 2, (3, N)) # Riduciamo a 3 random per pulizia grafico
+        rand_pts = np.random.uniform(0, 2, (5, N)) # Riduciamo a 3 random per pulizia grafico
         for i, pt in enumerate(rand_pts):
             start_points.append((f"Rnd {i+1}", pt))
 
