@@ -1,60 +1,39 @@
-# Numerical Optimization for Large Scale Problems - Assignment
+# Numerical Optimization for Large Scale Problems
 
-This repository contains the implementation of the final project for the **Numerical Optimization for Large Scale Problems** course (A.Y. 2025/2026) at Politecnico di Torino.
+> **Academic Report:** Assignment 2.1 - Derivative-based Optimization
 
-The project focuses on solving unconstrained large-scale optimization problems using second-order derivative-based methods, comparing their performance in terms of efficiency, accuracy, and robustness.
+This repository contains the source code, numerical results, and analysis for the implementation of second-order unconstrained optimization methods. The project focuses on assessing the efficiency, scalability, and robustness of these algorithms on high-dimensional problems (up to $N = 100,000$).
 
-## 🚀 Project Overview
+## 🎯 Objective
+The primary goal is to implement and compare two advanced second-order optimization algorithms:
+1. **Modified Newton Method**: Utilizes a Modified Cholesky Factorization to ensure descent directions in non-convex regions.
+2. **Truncated Newton Method (Newton-CG)**: Approximates the Newton step using the Conjugate Gradient method, designed to handle large-scale problems without exact Hessian factorization.
 
-The assignment explores **Derivative-based Optimization** (Assignment 2.1) applied to high-dimensional test problems. The goal is to minimize objective functions where the dimension $n$ scales up to $10^5$.
+Both methods are globalized using a **Backtracking Line Search** strategy.
 
-### Implemented Methods
-We have implemented the following optimization algorithms with **Back-tracking Line Search** using the Armijo condition:
-1.  **Modified Newton Method:** Utilizes a Cholesky decomposition with diagonal correction ($\tau$-adjustment) to ensure a descent direction, exploiting the **banded structure** of the Hessian for computational efficiency.
-2.  **Truncated Newton Method (Newton-CG):** An inexact Newton approach that solves the Newton system using the Conjugate Gradient method, suitable for very large-scale problems where explicit Hessian inversion is impractical.
+## 📊 Test Problems
+The solvers were benchmarked on two classic large-scale optimization problems:
+* **Broyden Tridiagonal Function**: Features a symmetric and pentadiagonal Hessian (bandwidth $b=2$).
+* **Banded Trigonometric Function**: Features a diagonal Hessian after algebraic decoupling.
 
-### Test Problems
-Following the assignment instructions, the solvers are tested on two problems:
-* **Broyden Tridiagonal Function**
-* **Banded Trigonometric Function**
+## 🛠️ Implementation & Optimizations
+To achieve optimal performance and linear time complexity $O(N)$, several problem-specific and structural optimizations were implemented:
 
-Numerical derivatives via **Finite Differences** are also implemented to study the impact of gradient and Hessian approximations (with increments $h=10^{-k}$ and $h_i=10^{-k}|x_i|$) on convergence rates.
+* **Sparse Matrix Operations**: Heavy reliance on banded storage formats (`scipy.linalg.cholesky_banded`) and sparse diagonal matrices (`scipy.sparse.diags`) to reduce memory footprint and computational cost from $O(N^3)$ to $O(N)$.
+* **Dynamic Hessian Perturbation ($\tau$)**: For the Modified Newton method, an iterative $\tau$-adjustment strategy ensures the minimal necessary perturbation to make the Hessian positive definite, preserving original curvature information.
+* **Adaptive Forcing Sequence ($\eta_k$)**: For the Truncated Newton method, $\eta_k = \min(0.5, \sqrt{||\nabla F_k||})$ is used to loosely solve the system when far from the optimum and recover quadratic convergence near the solution.
+* **Finite Differences & Graph Coloring**:
+  * Implemented highly vectorized Finite Difference (FD) schemes for gradient and Hessian approximations.
+  * Exploited **Graph Coloring (Stride Strategy)** to compute the exact Hessian via gradient differences in $O(1)$ evaluations (e.g., exactly 5 evaluations for the pentadiagonal problem).
 
-## 📂 Repository Structure
-
-* `root/`
-    * `methods.py`: Core implementation of Modified Newton and Truncated Newton algorithms.
-    * `broyden.py`: Definition of the Broyden Tridiagonal problem including function, gradient, and sparse Hessian.
-    * `banded_trig.py`: Definition of the Banded Trigonometric problem.
-    * `utils.py`: Utility functions for backtracking line search, convergence analysis, and plotting.
-    * `main.py`: Main execution script to run benchmarks across different dimensions ($n=2, 10^3, 10^4, 10^5$).
-* `results/`: CSV files containing the numerical results of the tests.
-* `latex_tables/`: Automatically generated LaTeX code for the report tables (Templates 1 and 2).
-* `plots/`: Visualization of convergence rates and function top-views for $n=2$.
-
-## 🛠️ Installation & Usage
-
-### Prerequisites
-* Python 3.10+
-* NumPy
-* SciPy
-* Matplotlib
-
-### Running the Optimization
-To run the standard benchmark suite, execute:
-```bash
-python root/main.py
-```
-The script uses a random seed equal to the minimum student ID of the team members as required by the guidelines.
-
-## 📊 Key Features
-* **Sparsity Exploitation:** The Modified Newton method handles banded matrices to significantly reduce computational complexity.
-* **Numerical Derivative Analysis:** Support for both constant increment $h$ and coordinate-dependent increment $h_i = 10^{-k}|\hat{x}_i|$ to evaluate approximation errors.
-* **Comprehensive Logging:** Tracks iteration counts, objective function values, gradient norms, and execution time for performance comparison.
+## 📈 Key Findings
+The experimental analysis up to dimension $N = 100,000$ revealed:
+* **Modified Newton Superiority**: For highly structured sparsity (tridiagonal/diagonal), exploiting exact matrix factorizations yields significant performance gains. It completed the Broyden problem at $N=100,000$ in $\approx 0.45$ seconds.
+* **Truncated Newton Limitations**: While generally preferred for its "matrix-free" low memory footprint, TN encountered numerical instability and early CG truncation on the Trigonometric problem due to negative curvature regions.
+* **Finite Difference Efficiency**: Vectorized FD approximations introduced negligible computational overhead, offering results nearly indistinguishable from exact analytical derivatives when tuned correctly ($h=10^{-8}$).
 
 ## 👥 Authors
-* **Lucio Baiocchi** 
-* **Leonardo Passafiume**
+* **Leonardo Passafiume** (s358616) - Politecnico di Torino
+* **Lucio Baiocchi** (s360244) - Politecnico di Torino
 
-## 📜 License
-This project is for educational purposes as part of the Numerical Optimization course requirements at Politecnico di Torino.
+**Date:** January 12, 2026
